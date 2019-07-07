@@ -23,6 +23,13 @@ Visit https://console.aws.amazon.com/lambda/home
 
 ## Using Serverless Offline
 
+Create a `.env` file in the root folder that looks like:
+
+```
+BRANCH_KEY=key_live...
+BRANCH_SECRET=secret_live...
+```
+
 1. Install Docker here: https://docs.docker.com/docker-for-mac/install/
 2. Run `brew install docker`
 3. Run `docker pull lambci/lambda`

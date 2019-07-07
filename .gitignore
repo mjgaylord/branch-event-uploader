@@ -59,3 +59,7 @@ typings/
 
 # next.js build output
 .next
+.serverless/cloudformation-template-create-stack.json
+.serverless/cloudformation-template-update-stack.json
+.serverless/data-export-service.zip
+.serverless/serverless-state.json

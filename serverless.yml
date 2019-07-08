@@ -6,13 +6,14 @@ plugins:
   - serverless-webpack
   - serverless-offline
 
+# serverless offline config
+custom:
+  serverless-offline:
+      port: 4000
+
 provider:
   name: aws
   runtime: nodejs8.10
-
-custom:
-  serverless-offline:   ## add this two lines
-      port: 4000        ## bellow "custom:" line
 
 functions:
   hello:

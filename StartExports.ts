@@ -3,14 +3,13 @@ import axios from 'axios'
 import 'source-map-support/register'
 import * as moment from 'moment'
 import dotenv from 'dotenv'
+import { Response, File, ServiceType } from './model/Models'
+import { Database } from './database/Database'
+import { serviceType } from './config/Config';
 
-interface Response {
-  statusCode: number,
-  body: string,
-  isBase64Encoded: boolean
-}
+const database = new Database()
 
-export const hello: APIGatewayProxyHandler = async (_event: any = {}, _context: Context, _callback: Callback): Promise<any> => {
+export const run: APIGatewayProxyHandler = async (_event: any = {}, _context: Context, _callback: Callback): Promise<any> => {
   dotenv.config()
   // we subtract 2 days as the previous day may not yet be available resulting in an empty response
   const yesterday = moment().subtract(2, 'days').format('YYYY-MM-DD')
@@ -27,14 +26,19 @@ export const hello: APIGatewayProxyHandler = async (_event: any = {}, _context: 
       branch_secret: process.env.BRANCH_SECRET,
       export_date: yesterday
     })
+
+    const files = translateResponse(response.data)
+    await database.saveFiles(files)
+
     const result: Response = {
       statusCode: 200,
-      body: JSON.stringify(translateResponse(response.data)),
+      body: JSON.stringify(files),
       isBase64Encoded: false
     }
     console.debug('Exports requested successfully...')
     return result
   } catch (error) {
+    console.error("Export files failed", error)
     const failed: Response = {
       statusCode: 400,
       body: (error.message || 'Unknown error'),
@@ -44,11 +48,16 @@ export const hello: APIGatewayProxyHandler = async (_event: any = {}, _context: 
   }
 }
 
-function translateResponse(response: JSON): string[] {
-  let result = Array<string>()
+function translateResponse(response: JSON): File[] {
+  let result = Array<File>()
+  const type = serviceType()
   for(const key in response) {
-    result.push(...response[key])
+    result.push({
+      location: response[key][0], 
+      downloaded: false, 
+      pathAvailable: type === ServiceType.Branch ? true : false,
+      type
+    })
   }
-  console.debug(`${JSON.stringify(result)}`)
   return result
 }

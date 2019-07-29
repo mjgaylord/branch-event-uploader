@@ -1,24 +1,74 @@
 service:
-  name: data-export-service
+  name: data-export-scheduler
 
 # Add the serverless-webpack plugin
 plugins:
   - serverless-webpack
+  - serverless-dynamodb-local
   - serverless-offline
 
 # serverless offline config
 custom:
   serverless-offline:
       port: 4000
+      babelOptions:
+        presets: ["es2015"]
+  dynamodb:
+    stages:
+      - dev
+    start:
+      migrate: true
 
 provider:
   name: aws
+  region: us-east-1
   runtime: nodejs8.10
+  environment:
+    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
 
 functions:
-  hello:
-    handler: handler.hello
+  run:
+    handler: StartExports.run
     events:
       - http:
-          method: get
-          path: export
+          method: post
+          path: runExports
+
+resources:
+  Resources:
+    ExportDB:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: location
+            AttributeType: S
+          - AttributeName: downloaded
+            AttributeType: S
+        KeySchema:
+          - AttributeName: location
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: DownloadedIndex
+            KeySchema:
+              - AttributeName: downloaded
+                KeyType: HASH
+            Projection:
+              ProjectionType: KEYS_ONLY
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}

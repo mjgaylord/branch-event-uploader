@@ -1,4 +1,4 @@
-![Data Flow](https://github.com/mjgaylord/data-export-lambda/flow.png)
+![Data Flow](docs/flow.png)
 
 # Setup
 

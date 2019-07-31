@@ -37,12 +37,29 @@ provider:
       Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
 
 functions:
-  run:
+  start:
     handler: StartExports.run
     events:
       - http:
           method: post
-          path: runExports
+          path: export
+          
+  download:
+    handler: CheckDownloads.run
+    events:
+      - http:
+          method: get
+          path: download
+
+  copy:
+    handler: DownloadFile.run
+
+  status:
+    handler: CheckStatus.run
+    events:
+      - http:
+          method: get
+          path: status
 
 resources:
   Resources:
@@ -51,12 +68,12 @@ resources:
       DeletionPolicy: Retain
       Properties:
         AttributeDefinitions:
-          - AttributeName: location
+          - AttributeName: downloadPath
             AttributeType: S
           - AttributeName: downloaded
             AttributeType: S
         KeySchema:
-          - AttributeName: location
+          - AttributeName: downloadPath
             KeyType: HASH
         GlobalSecondaryIndexes:
           - IndexName: DownloadedIndex

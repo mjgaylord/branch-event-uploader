@@ -53,7 +53,7 @@ function translateResponse(response: JSON): File[] {
   const type = serviceType()
   for(const key in response) {
     result.push({
-      location: response[key][0], 
+      downloadPath: response[key][0], 
       downloaded: false, 
       pathAvailable: type === ServiceType.Branch ? true : false,
       type

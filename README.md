@@ -1,3 +1,5 @@
+![Data Flow](https://github.com/mjgaylord/data-export-lambda/flow.png)
+
 # Setup
 
 Install Homebrew

@@ -1,5 +1,5 @@
 export interface File {
-    location: string,
+    downloadPath: string,
     pathAvailable: boolean,
     downloaded: boolean,
     type: ServiceType,

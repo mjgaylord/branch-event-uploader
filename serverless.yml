@@ -38,14 +38,14 @@ provider:
 
 functions:
   start:
-    handler: StartExports.run
+    handler: handlers/StartExports.run
     events:
       - http:
           method: post
           path: export
           
   download:
-    handler: CheckDownloads.run
+    handler: handlers/CheckDownloads.run
     environment:
       FUNCTION_PREFIX: ${self:service}-${opt:stage, self:provider.stage}
     events:
@@ -54,10 +54,10 @@ functions:
           path: download
 
   copy:
-    handler: DownloadFile.run
+    handler: handlers/DownloadFile.run
 
   status:
-    handler: CheckStatus.run
+    handler: handlers/CheckStatus.run
     events:
       - http:
           method: get

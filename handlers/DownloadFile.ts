@@ -2,7 +2,7 @@ import { APIGatewayProxyHandler, Context, Callback, APIGatewayEvent } from 'aws-
 import 'source-map-support/register'
 import fetch from 'node-fetch'
 import * as pathUtil from 'path'
-import { s3 } from './config/Config'
+import { s3 } from '../config/Config'
 // import { Database } from './database/Database'
 
 // const database = new Database()

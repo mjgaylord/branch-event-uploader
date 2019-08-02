@@ -3,9 +3,9 @@ import axios from 'axios'
 import 'source-map-support/register'
 import * as moment from 'moment'
 import dotenv from 'dotenv'
-import { Response, File, ServiceType } from './model/Models'
-import { Database } from './database/Database'
-import { serviceType } from './config/Config';
+import { Response, File, ServiceType } from '../model/Models'
+import { Database } from '../database/Database'
+import { serviceType } from '../config/Config';
 
 const database = new Database()
 

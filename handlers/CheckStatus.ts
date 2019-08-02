@@ -1,8 +1,8 @@
 import { APIGatewayProxyHandler, Context, Callback } from 'aws-lambda'
 import 'source-map-support/register'
 import dotenv from 'dotenv'
-import { Response } from './model/Models'
-import { Database } from './database/Database'
+import { Response } from '../model/Models'
+import { Database } from '../database/Database'
 
 const database = new Database()
 

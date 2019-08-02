@@ -5,7 +5,6 @@ import { Response, File } from './model/Models'
 import { Database } from './database/Database'
 import * as pathUtil from 'path'
 import { lambda, downloadBucket, s3 } from './config/Config'
-import axios from 'axios'
 
 const database = new Database()
 
@@ -47,37 +46,23 @@ async function downloadFiles(files: File[], bucket: string) {
 }
 
 async function startDownload(file: File, bucket: string): Promise<DownloadResult> {
-  const available = await fileAvailable(file)
-  if (!available) {
-    console.debug('Download is not ready yet, will wait for next scheduled check...')
-    return { success: false, file }
-  }
   const exists = await checkAlreadyDownloaded(file, bucket)
   if (exists) {
     console.debug(`Object already exists, skipping... (Key: ${file})`)
     return { success: true, file }
   }
   console.debug(`Downloading file: ${file}`)
+  const functionName = `${process.env.FUNCTION_PREFIX}-copy`
   try {
     await lambda.invoke({
-      LogType: "Tail",
-      FunctionName: 'file-downloader-dev-downloadFile',
+      LogType: 'Tail',
+      FunctionName: functionName,
       Payload: JSON.stringify({ path: file, bucket }) // pass params
     }).promise()
     return {success: true, file}
   } catch (error) {
     console.error(`Error executing lambda due to: ${error}`)
     return {success: false, file, error}
-  }
-}
-
-async function fileAvailable(file: File): Promise<Boolean> {
-  try {
-    const response = await axios.head(file.downloadPath)
-    return response.status === 200
-  } catch (error) {
-    console.warn(`Unable to check head status of file: ${file.downloadPath} due to error: ${error.message}`)
-    return false
   }
 }
 

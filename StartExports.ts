@@ -17,6 +17,7 @@ export const run: APIGatewayProxyHandler = async (_event: any = {}, _context: Co
     'Content-Type': 'application/json',
     'Accept': 'application/json'
   }
+  console.info('Starting exports scheduler...')
   const api = axios.create({
     baseURL: "https://api2.branch.io/v3"
   })
@@ -26,7 +27,7 @@ export const run: APIGatewayProxyHandler = async (_event: any = {}, _context: Co
       branch_secret: process.env.BRANCH_SECRET,
       export_date: yesterday
     })
-
+    console.debug('Exports requested successfully. Saving to database...')
     const files = translateResponse(response.data)
     await database.saveFiles(files)
 
@@ -35,10 +36,10 @@ export const run: APIGatewayProxyHandler = async (_event: any = {}, _context: Co
       body: JSON.stringify(files),
       isBase64Encoded: false
     }
-    console.debug('Exports requested successfully...')
+    console.debug('Records saved successfully in database.')    
     return result
   } catch (error) {
-    console.error("Export files failed", error)
+    console.error("Export files failed", error.message)
     const failed: Response = {
       statusCode: 400,
       body: (error.message || 'Unknown error'),
@@ -51,6 +52,7 @@ export const run: APIGatewayProxyHandler = async (_event: any = {}, _context: Co
 function translateResponse(response: JSON): File[] {
   let result = Array<File>()
   const type = serviceType()
+  console.info('Translating response...')
   for(const key in response) {
     result.push({
       downloadPath: response[key][0], 
@@ -59,5 +61,6 @@ function translateResponse(response: JSON): File[] {
       type
     })
   }
+  console.info('Response translated')
   return result
 }

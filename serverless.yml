@@ -46,6 +46,8 @@ functions:
           
   download:
     handler: CheckDownloads.run
+    environment:
+      FUNCTION_PREFIX: ${self:service}-${opt:stage, self:provider.stage}
     events:
       - http:
           method: get

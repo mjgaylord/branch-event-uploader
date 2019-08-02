@@ -2,38 +2,47 @@ import { DynamoDB, AWSError } from 'aws-sdk'
 import { File, ServiceType } from '../model/Models'
 import { DocumentClient, QueryOutput } from 'aws-sdk/clients/dynamodb'
 import * as AWS from 'aws-sdk'
+import dotenv from 'dotenv'
 
 export class Database {
     dynamoDb: DocumentClient
     downloadTable = process.env.DYNAMODB_TABLE
-    
+
     constructor() {
-        AWS.config.update({region: 'us-east-1'})
+        AWS.config.update({ region: 'us-east-1' })
+        dotenv.config()
+        // if we're running offline we need to specify the endpoint as localhost
+        const endpoint = process.env.OFFLINE ? { endpoint: 'http://localhost:8000' } : {}
         this.dynamoDb = new DynamoDB.DocumentClient({
-            region: 'us-east-1', 
-            endpoint: 'http://localhost:8000'
+            region: 'us-east-1',
+            ...endpoint
         })
     }
 
-    saveFiles(files: File[]): Promise<boolean> {
+    saveFiles(files: File[]): Promise<boolean[]> {
+        return Promise.all(files.map(file => {
+            return this.saveFile(file)
+        }))
+    }
+
+    saveFile(file: File): Promise<boolean> {
         const { downloadTable, dynamoDb } = this
-        return new Promise<boolean>((resolve, reject ) => {
-            files.forEach(file => {
-                const item = {
-                    'downloaded': `${file.downloaded ? '1' : '0'}`,
-                    'downloadPath': `${file.downloadPath}`
+        return new Promise<boolean>((resolve, reject) => {
+            console.info(`Saving: ${file.downloadPath}`)
+            const item = {
+                'downloaded': `${file.downloaded ? '1' : '0'}`,
+                'downloadPath': `${file.downloadPath}`
+            }
+            dynamoDb.put({
+                TableName: downloadTable,
+                Item: item,
+            }, (error, result) => {
+                if (!!error) {
+                    reject(error)
+                    return
                 }
-                dynamoDb.put({
-                    TableName: downloadTable,
-                    Item: item,
-                }, (error, result) => {
-                    if (!!error) {
-                        reject(error)
-                        return
-                    }
-                    console.debug(`DB Save result: ${JSON.stringify(result)}`)
-                    resolve(true)
-                })
+                console.info(`DB Save result: ${JSON.stringify(result)}`)
+                resolve(true)
             })
         })
     }
@@ -45,7 +54,7 @@ export class Database {
                 TableName: downloadTable,
                 FilterExpression: "downloaded = :downloaded",
                 ExpressionAttributeValues: {
-                    ":downloaded" : "0"
+                    ":downloaded": "0"
                 }
             }, (error: AWSError, data: QueryOutput) => {
                 if (!!error) {
@@ -71,7 +80,7 @@ export class Database {
                 TableName: downloadTable,
                 FilterExpression: "downloadPath = :l",
                 ExpressionAttributeValues: {
-                    ":l" : path
+                    ":l": path
                 }
             }, (error: AWSError, data: QueryOutput) => {
                 if (!!error) {
@@ -92,8 +101,8 @@ export class Database {
 }
 
 function itemToFile(item: any): File {
-    return { 
-        downloaded : item.downloaded === '1' ? true : false, 
+    return {
+        downloaded: item.downloaded === '1' ? true : false,
         downloadPath: item.downloadPath as string,
         pathAvailable: true, //TODO: Fix for Tune
         type: ServiceType.Branch //TODO: Fix for Tune

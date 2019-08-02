@@ -30,11 +30,17 @@ Create a `.env` file in the root folder that looks like:
 ```
 BRANCH_KEY=key_live...
 BRANCH_SECRET=secret_live...
+ACCESS_KEY_ID={AWS_ACCESS_KEY_ID - used to access S3 and Lambda}
+ACCESS_SECRET_KEY={ACCESS_SECRET_KEY - used to access S3 and Lambda}
+DOWNLOAD_BUCKET={bucket name on S3 e.g. branch-data-exports}
+SERVICE_TYPE=Branch { either Branch or Tune as Tune exports function differently}
+OFFLINE=true // For offline DynamoDB support.
 ```
 
 1. Install Docker here: https://docs.docker.com/docker-for-mac/install/
 2. Run `brew install docker`
 3. Run `docker pull lambci/lambda`
-4. Run `sls offline start`
+4. Run `npm run install:dynamodb`
+5. Run `npm run start`
 
-Local services will now be available at http://localhost:3000/
+Local services will now be available at http://localhost:4000/

@@ -7,7 +7,7 @@ import { s3 } from './config/Config'
 
 // const database = new Database()
 
-export const download: APIGatewayProxyHandler = async (event: APIGatewayEvent, context: Context, _callback: Callback) => {
+export const run: APIGatewayProxyHandler = async (event: APIGatewayEvent, context: Context, _callback: Callback) => {
     
   //@ts-ignore
   const { path, bucket } = event
@@ -18,7 +18,7 @@ export const download: APIGatewayProxyHandler = async (event: APIGatewayEvent, c
   }
 
   const parsed = pathUtil.parse(path)
-  const key = `${parsed.name}.csv`
+  const key = parsed.name
   const destBucket = bucket
   context.callbackWaitsForEmptyEventLoop = true
 
@@ -40,7 +40,8 @@ export const download: APIGatewayProxyHandler = async (event: APIGatewayEvent, c
       s3.upload({
           Bucket: destBucket,
           Key: key,
-          Body: buffer
+          Body: buffer,
+          Metadata: { downloadPath: path }
       }, async function(err, _data) {
         if (err) {
           console.error(`Error uploading: ${err}`)

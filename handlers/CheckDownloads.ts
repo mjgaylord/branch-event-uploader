@@ -57,7 +57,7 @@ async function startDownload(file: File, bucket: string): Promise<DownloadResult
     await lambda.invoke({
       LogType: 'Tail',
       FunctionName: functionName,
-      Payload: JSON.stringify({ path: file, bucket }) // pass params
+      Payload: JSON.stringify({ path: file.downloadPath, bucket }) // pass params
     }).promise()
     return {success: true, file}
   } catch (error) {

@@ -3,15 +3,15 @@ import 'source-map-support/register'
 import fetch from 'node-fetch'
 import * as pathUtil from 'path'
 import { s3 } from '../config/Config'
-// import { Database } from './database/Database'
+import { Database } from './../database/Database'
 
-// const database = new Database()
+const database = new Database()
 
 export const run: APIGatewayProxyHandler = async (event: APIGatewayEvent, context: Context, _callback: Callback) => {
-    
+
   //@ts-ignore
   const { path, bucket } = event
-  
+
   console.log(`path to file: ${path}`)
   if (!path) {
     throw new Error('path value missing from request body...')
@@ -38,11 +38,11 @@ export const run: APIGatewayProxyHandler = async (event: APIGatewayEvent, contex
       console.log('Downloaded file successfully, writing to S3...')
       const buffer = await response.buffer()
       s3.upload({
-          Bucket: destBucket,
-          Key: key,
-          Body: buffer,
-          Metadata: { downloadPath: path }
-      }, async function(err, _data) {
+        Bucket: destBucket,
+        Key: key,
+        Body: buffer,
+        Metadata: { downloadPath: path }
+      }, async function (err, _data) {
         if (err) {
           console.error(`Error uploading: ${err}`)
           reject(err)
@@ -51,10 +51,14 @@ export const run: APIGatewayProxyHandler = async (event: APIGatewayEvent, contex
         console.info(`File: ${key} written to bucket: ${destBucket}`)
 
         //update dynamoDb
-        // await database.downloadCompleted(path)
-
-        resolve("working")
-       })
+        try {
+          await database.downloadCompleted(path)
+          resolve("success")
+        } catch (error) {
+          reject(error)
+          return
+        }
+      })
     })
   }
 

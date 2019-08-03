@@ -1,5 +1,5 @@
 import { DynamoDB, AWSError } from 'aws-sdk'
-import { File, ServiceType } from '../model/Models'
+import { File, ServiceType, typeToString, DatabaseItem } from '../model/Models'
 import { DocumentClient, QueryOutput } from 'aws-sdk/clients/dynamodb'
 import * as AWS from 'aws-sdk'
 import dotenv from 'dotenv'
@@ -29,13 +29,9 @@ export class Database {
         const { downloadTable, dynamoDb } = this
         return new Promise<boolean>((resolve, reject) => {
             console.info(`Saving: ${file.downloadPath}`)
-            const item = {
-                'downloaded': `${file.downloaded ? '1' : '0'}`,
-                'downloadPath': `${file.downloadPath}`
-            }
             dynamoDb.put({
                 TableName: downloadTable,
-                Item: item,
+                Item: fileToItem(file),
             }, (error, result) => {
                 if (!!error) {
                     reject(error)
@@ -98,6 +94,12 @@ export class Database {
             })
         })
     }
+
+    async downloadCompleted(path: string): Promise<Boolean[]> {
+        const files = await this.getStatus(path)
+        files.forEach(file => file.downloaded = true)
+        return this.saveFiles(files)
+    }
 }
 
 function itemToFile(item: any): File {
@@ -106,5 +108,14 @@ function itemToFile(item: any): File {
         downloadPath: item.downloadPath as string,
         pathAvailable: true, //TODO: Fix for Tune
         type: ServiceType.Branch //TODO: Fix for Tune
+    }
+}
+
+function fileToItem(file: File): DatabaseItem {
+    return {
+        downloaded: `${file.downloaded ? '1' : '0'}`,
+        downloadPath: `${file.downloadPath}`,
+        pathAvailable: `${file.pathAvailable ? '1' : '0'}`,
+        type: typeToString(file.type)
     }
 }

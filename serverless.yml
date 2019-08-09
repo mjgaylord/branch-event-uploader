@@ -18,6 +18,8 @@ custom:
       - dev
     start:
       migrate: true
+  s3Buckets:
+    BUCKET_NAME: ${self:service}-${opt:stage, self:provider.stage}-exports-bucket
 
 provider:
   name: aws
@@ -34,7 +36,11 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+        - lambda:InvokeFunction
+      Resource: 
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+        - "arn:aws:lambda:${opt:region, self:provider.region}:*:*"
+        - "arn:aws:s3:::${self:custom.s3Buckets.BUCKET_NAME}"
 
 functions:
   start:
@@ -48,13 +54,14 @@ functions:
     handler: handlers/CheckDownloads.run
     environment:
       FUNCTION_PREFIX: ${self:service}-${opt:stage, self:provider.stage}
+      EXPORTS_BUCKET: ${self:custom.s3Buckets.BUCKET_NAME}
     events:
       - http:
           method: get
           path: download
 
   copy:
-    handler: handlers/DownloadFile.run
+    handler: handlers/CopyFile.run
 
   status:
     handler: handlers/CheckStatus.run
@@ -62,6 +69,17 @@ functions:
       - http:
           method: get
           path: status
+
+  transform:
+    handler: handlers/Transform.run
+    events:
+      - s3:
+        bucket: ${self:custom.s3Buckets.BUCKET_NAME}
+        event: s3:ObjectCreated:*
+        rules:
+          - suffix: .csv
+        existing: true
+
 
 resources:
   Resources:
@@ -91,3 +109,19 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:provider.environment.DYNAMODB_TABLE}
+    S3BucketExportTransforms:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: '${self:custom.s3Buckets.BUCKET_NAME}'
+    TransformLambdaPermissionS3:
+      Type: 'AWS::Lambda::Permission'
+      Properties:
+        FunctionName:
+          'Fn::GetAtt':
+            - TransformLambdaFunction
+            - Arn
+        Principal: 's3.amazonaws.com'
+        Action: 'lambda:InvokeFunction'
+        SourceAccount:
+          Ref: AWS::AccountId
+        SourceArn: 'arn:aws:s3:::${self:custom.s3Buckets.BUCKET_NAME}'

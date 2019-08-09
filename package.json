@@ -25,7 +25,7 @@
     "@types/axios": "^0.14.0",
     "@types/node": "^10.12.18",
     "@types/node-fetch": "^2.3.7",
-    "serverless": "^1.48.2",
+    "serverless": "^1.49.0",
     "serverless-dynamodb-local": "^0.2.38",
     "serverless-offline": "^5.6.1",
     "serverless-webpack": "^5.3.1",

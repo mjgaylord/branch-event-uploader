@@ -4,7 +4,7 @@ import dotenv from 'dotenv'
 import { Response, File } from '../model/Models'
 import { Database } from '../database/Database'
 import * as pathUtil from 'path'
-import { lambda, downloadBucket, s3 } from '../config/Config'
+import { lambda, s3 } from '../config/Config'
 
 const database = new Database()
 
@@ -19,7 +19,8 @@ export const run: APIGatewayProxyHandler = async (_event: any = {}, _context: Co
   try {
     //list files that have not yet been downloaded yet
     const files = await database.listDownloads()
-    const results = await downloadFiles(files, downloadBucket)
+    const bucket = process.env.EXPORTS_BUCKET
+    const results = await downloadFiles(files, bucket)
     const result: Response = {
       statusCode: 200,
       body: JSON.stringify(results),

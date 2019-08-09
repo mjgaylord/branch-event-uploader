@@ -32,7 +32,6 @@ BRANCH_KEY=key_live...
 BRANCH_SECRET=secret_live...
 ACCESS_KEY_ID={AWS_ACCESS_KEY_ID - used to access S3 and Lambda}
 ACCESS_SECRET_KEY={ACCESS_SECRET_KEY - used to access S3 and Lambda}
-DOWNLOAD_BUCKET={bucket name on S3 e.g. branch-data-exports}
 SERVICE_TYPE=Branch { either Branch or Tune as Tune exports function differently}
 OFFLINE=true // For offline DynamoDB support.
 ```

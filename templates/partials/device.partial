@@ -1,0 +1,4 @@
+"device": {
+	"id": "{{user_data_idfv}}{{user_data_android_id}}",
+	"advertisingId": "{{user_data_idfa}}{{user_data_aaid}}"
+}

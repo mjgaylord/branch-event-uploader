@@ -1,3 +1,5 @@
+import BranchEvent from "./BranchEvent";
+
 export interface File {
     downloadPath: string,
     pathAvailable: boolean,
@@ -15,6 +17,23 @@ export interface DatabaseItem {
 export enum ServiceType {
     Branch,
     Tune
+}
+
+export enum Destinations {
+    Segment,
+    Amplitude,
+    mParticle,
+}
+
+export interface FailedEvent {
+    event: BranchEvent,
+    reason: String
+}
+
+export interface UploadResult {
+    errors: Array<FailedEvent>,
+    totalEvents: number,
+    file: string
 }
 
 export function typeToString(type: ServiceType) {

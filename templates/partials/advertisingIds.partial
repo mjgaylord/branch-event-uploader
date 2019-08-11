@@ -1,0 +1,4 @@
+"idfv": "{{user_data_idfv}}",
+"idfa":"{{user_data_idfa}}",
+"android_id": "{{user_data_android_id}}",
+"aaid":"{{user_data_aaid}}"

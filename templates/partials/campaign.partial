@@ -1,0 +1,7 @@
+"campaign": {
+  "name": "{{last_attributed_touch_data_tilde_campaign}}",
+  "source": "{{last_attributed_touch_data_tilde_channel}}",
+  "medium": "{{last_attributed_touch_data_tilde_feature}}",
+  "content": "{{last_attributed_touch_data_tilde_tags)}}",
+  "tags": "{{joinedTagsFunction}}"
+}

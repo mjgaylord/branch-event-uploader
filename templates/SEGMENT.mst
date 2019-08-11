@@ -1,0 +1,17 @@
+{
+	"anonymousId": "{{#custom_data.$segment_anonymous_id}}{{custom_data.$segment_anonymous_id}}{{/custom_data.$segment_anonymous_id}}{{^custom_data.$segment_anonymous_id}}anonymous{{/custom_data.$segment_anonymous_id}}",
+	"event": "branch_{{name}}",
+	"timestamp": {{timestamp}},
+	"context": {
+		"app": {
+			"name": "{{app_name}}"
+		},
+		{{> campaign}},
+		{{> device}},
+		"ip": "{{user_data_ip}}",
+		"user_agent": "{{user_data_user_agent}}",
+		"os":"{{#lowerCasedFunction}}{{user_data_os}}{{/lowerCasedFunction}} {{user_data_os_version}}",
+		{{> advertisingIds}},
+		{{> properties}}
+	}
+}

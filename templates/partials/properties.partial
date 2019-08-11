@@ -1,0 +1,9 @@
+"properties": {
+	"event_type":"{{last_attributed_touch_type}}",
+	"os":"{{user_data_os}}",
+	"platform":"{{user_data_platform}}",
+	"ip":"{{user_data_ip}}",
+	"timestamp":{{timestamp}},
+	"user_agent ":"{{user_data_user_agent}}",
+	{{> lastAttributedTouchData}}
+}

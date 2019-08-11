@@ -20,6 +20,7 @@ custom:
       migrate: true
   s3Buckets:
     BUCKET_NAME: ${self:service}-${opt:stage, self:provider.stage}-exports-bucket
+    
 
 provider:
   name: aws
@@ -27,6 +28,13 @@ provider:
   runtime: nodejs8.10
   environment:
     DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    BRANCH_KEY: add_here
+    BRANCH_SECRET: add_here
+    ACCESS_KEY_ID: add_here
+    ACCESS_SECRET_KEY: add_here
+    SERVICE_TYPE: Branch
+    SEGMENT_WRITE_KEY: add_here
+    TEMPLATES_BUCKET: data-export-lambda-templates
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -79,6 +87,13 @@ functions:
         rules:
           - suffix: .csv
         existing: true
+
+  testTransform:
+    handler: handlers/TestTransform.run
+    events:
+      - http:
+          method: post
+          path: test
 
 
 resources:

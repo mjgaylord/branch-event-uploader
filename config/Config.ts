@@ -20,3 +20,5 @@ export const lambda = new AWS.Lambda({
   secretAccessKey: process.env.ACCESS_SECRET_KEY,
   region: 'us-east-1'
 });
+
+export const templatesBucket = process.env.TEMPLATES_BUCKET

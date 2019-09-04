@@ -1,8 +1,9 @@
 import { DynamoDB, AWSError } from 'aws-sdk'
-import { File, ServiceType, typeToString, DatabaseItem } from '../model/Models'
+import { File, ServiceType, DatabaseItem } from '../model/Models'
 import { DocumentClient, QueryOutput } from 'aws-sdk/clients/dynamodb'
 import * as AWS from 'aws-sdk'
 import dotenv from 'dotenv'
+import { typeToString } from '../functions/Functions'
 
 export class Database {
     dynamoDb: DocumentClient

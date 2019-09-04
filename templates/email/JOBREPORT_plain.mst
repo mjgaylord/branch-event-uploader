@@ -1,0 +1,10 @@
+{{#reports}}
+Events upload to {{service}} for export date: {{date}}
+
+File processed: {{filename}}
+Events processed: {{events_count}}
+Failed Events: {{failed_events_count}}
+
+{{#messages}}Messages: {{messages}}{{/messages}}
+{{#errors}}Errors: {{errors}}{{/errors}}
+{{/reports}}

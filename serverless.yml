@@ -21,7 +21,6 @@ custom:
   s3Buckets:
     BUCKET_NAME: ${self:service}-${opt:stage, self:provider.stage}-exports-bucket
     
-
 provider:
   name: aws
   region: us-east-1
@@ -35,6 +34,10 @@ provider:
     SERVICE_TYPE: Branch
     SEGMENT_WRITE_KEY: add_here
     TEMPLATES_BUCKET: data-export-lambda-templates
+    REPORT_RECEIVER_MAIL: add_report_receivers_separated_by_commas
+    REPORT_SENDER_MAIL: add_sender_email
+    EXPORT_SERVICES: Segment # Options are Segment, Mixpanel, Amplitude for now
+    EXCLUDED_TOPICS: Click # These files will get ignored from uploading. See Models.ts - ExcludedType for options
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -45,18 +48,17 @@ provider:
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
         - lambda:InvokeFunction
+        - ses:SendEmail
+        - ses:SendRawEmail
       Resource: 
         - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
         - "arn:aws:lambda:${opt:region, self:provider.region}:*:*"
         - "arn:aws:s3:::${self:custom.s3Buckets.BUCKET_NAME}"
+        - "arn:aws:ses:${opt:region, self:provider.region}:*"
 
 functions:
   start:
     handler: handlers/StartExports.run
-    events:
-      - http:
-          method: post
-          path: export
           
   download:
     handler: handlers/CheckDownloads.run
@@ -80,6 +82,8 @@ functions:
 
   transform:
     handler: handlers/Transform.run
+    environment:
+      FUNCTION_PREFIX: ${self:service}-${opt:stage, self:provider.stage}
     events:
       - s3:
         bucket: ${self:custom.s3Buckets.BUCKET_NAME}
@@ -87,14 +91,16 @@ functions:
         rules:
           - suffix: .csv
         existing: true
+  
+  report:
+    handler: handlers/JobReport.run
 
-  testTransform:
-    handler: handlers/TestTransform.run
-    events:
-      - http:
-          method: post
-          path: test
-
+  # testTransform:
+  #   handler: handlers/TestTransform.run
+  #   events:
+  #     - http:
+  #         method: post
+  #         path: test
 
 resources:
   Resources:

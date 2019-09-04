@@ -1,12 +1,12 @@
 //@ts-ignore
 import Analytics from 'analytics-node'
 import { Context, Callback, S3CreateEvent } from 'aws-lambda'
-import { Response, FailedEvent, UploadResult } from '../model/Models'
+import { Response, FailedEvent, UploadResult, UploadResultStatus, ExportService } from '../model/Models'
 import { parse } from 'papaparse'
 import BranchEvent from '../model/BranchEvent'
-import { SegmentTransformer } from '../transformers/Transformer'
 import { getFile, loadTemplates } from '../utils/s3'
-import { templatesBucket } from '../config/Config'
+import { templatesBucket, configuredServices, excludedTopics, lambda } from '../config/Config'
+import { SegmentTransformer } from '../transformers/SegmentTransformer';
 
 const analytics = new Analytics(process.env.SEGMENT_WRITE_KEY);
 
@@ -15,27 +15,34 @@ export const run = async (event: S3CreateEvent, _context: Context, _callback: Ca
   const bucket = event.Records[0].s3.bucket.name
   const filename = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, " "))
 
+  if (!shouldUpload(filename)) {
+    const message = `File - ${filename} marked as excluded, skipping...`
+    console.info(message)
+    return {
+      statusCode: 200,
+      body: message,
+      isBase64Encoded: false
+    }
+  }
   try {
     const file = await getFile(bucket, filename)
     console.debug(`Uploading results for: ${bucket}/${filename}`)
-    const template = await getFile(templatesBucket, 'SEGMENT.mst')
-    const partials = await loadTemplates(templatesBucket, 'partials')
-    const uploadResult = await transformAndUpload(file, template, partials)
-    if ((uploadResult.errors.length) > 0) {
-      const failed: Response = {
-        statusCode: 400,
-        body: `There were errors uploading ${filename} the events to Segment.\nTotal events: ${uploadResult.totalEvents}\nError count: ${uploadResult.errors.length}`,
+    const uploadResults = await transformAndUpload(file, filename)
+    console.debug(`Upload completed - results: ${JSON.stringify(uploadResults)}`)
+
+    //TODO: Send JobReport
+    const reported = await sendJobReport(uploadResults)
+    if (!!reported.error) {
+      const result: Response = {
+        statusCode: 500,
+        body: `Unable to notify report lambda due to: ${reported.error}`,
         isBase64Encoded: false
       }
-      return failed
+      return result
     }
-    console.info(
-      'Successfully downloaded ' + bucket + '/' + filename +
-      ' and uploaded to Segment!'
-    )
     const result: Response = {
       statusCode: 200,
-      body: `Upload of file: ${filename} successful\nTotal events: ${uploadResult.totalEvents}`,
+      body: `Upload results: ${JSON.stringify(uploadResults)}`,
       isBase64Encoded: false
     }
     return result
@@ -54,11 +61,36 @@ export const run = async (event: S3CreateEvent, _context: Context, _callback: Ca
   }
 }
 
-export async function transformAndUpload(file: string, template: string, partials: {}): Promise<UploadResult> {
+export function shouldUpload(filename: string): Boolean {
+  const topics = excludedTopics()
+  for (const topic in topics.values) {
+    if (filename.indexOf(topic) >= 0) {
+      return false
+    }
+  }
+  return true
+}
+
+export async function transformAndUpload(file: string, filename: string): Promise<Array<UploadResult>> {
   const events = await transformCSVtoJSON(file)
-  console.debug(`CSV converted to JSON, uploading to Segment...`)
-  const errors = await uploadToSegment(events, template, partials)
-  return { totalEvents: events.length, errors, file }
+  let uploadResults = Array<UploadResult>()
+  const services = configuredServices()
+  if (events.length === 0) {
+    console.warn(`Events empty, nothing to upload.`)
+    return uploadResults
+  }
+  console.info(`CSV converted to JSON uploading ${events.length} events to: ${services.join(', ')}`)
+  return Promise.all(services.map(async service => {
+    console.debug(`Uploading to ${service}...`)
+    switch (service) {
+      case ExportService.Segment:
+        return await uploadToSegment(events, filename)
+      case ExportService.Amplitude:
+        throw new Error(`Service not yet implemented: ${service}`) 
+      case ExportService.Mixpanel:
+        throw new Error(`Service not yet implemented: ${service}`)
+    }
+  }))
 }
 
 function transformCSVtoJSON(csv: string): BranchEvent[] {
@@ -75,24 +107,40 @@ function transformCSVtoJSON(csv: string): BranchEvent[] {
   return result.data
 }
 
-async function uploadToSegment(events: BranchEvent[], template, partials): Promise<Array<FailedEvent>> {
+async function uploadToSegment(events: BranchEvent[], filename: string): Promise<UploadResult> {
+  const template = await getFile(templatesBucket, 'segment/SEGMENT.mst')
+  const partials = await loadTemplates(templatesBucket, 'segment/partials')
   const transformer = new SegmentTransformer(template, partials)
   let errors = new Array<FailedEvent>()
   for (let i = 0; i < events.length; i++) {
     const event = events[i]
-     // More in the docs here: https://segment.com/docs/spec/track/
-     try {
+    // More in the docs here: https://segment.com/docs/spec/track/
+    try {
       const segmentEvent = transformer.transform(event)
       if (!segmentEvent) {
         throw new Error(`Transform failed for event`)
       }
-      analytics.track(segmentEvent)  
+      analytics.track(segmentEvent)
     } catch (error) {
-      errors.push({event, reason: JSON.stringify(error)})
+      errors.push({ event, reason: JSON.stringify(error) })
     }
   }
   await completed()
-  return errors
+
+  let status = UploadResultStatus.Successful
+  if (errors.length === events.length) {
+    status = UploadResultStatus.Failed
+  } else if (errors.length > 0) {
+    status = UploadResultStatus.ContainsErrors
+  }
+  return {
+    totalEvents: events.length,
+    service: ExportService.Segment,
+    dateOfFile: dateInFilename(filename),
+    file: filename,
+    errors,
+    status
+  }
 }
 
 const completed = (): Promise<any> => {
@@ -105,4 +153,27 @@ const completed = (): Promise<any> => {
       resolve(batch)
     })
   })
+}
+
+function dateInFilename(filename: string): string {
+  const matches = filename.match('[0-9]{4}[-|\/]{1}[0-9]{2}[-|\/]{1}[0-9]{2}')
+  if (matches.length === 0) {
+    return "Unknown"
+  }
+  return matches[0]
+}
+
+async function sendJobReport(results: Array<UploadResult>) {
+  const functionName = `${process.env.FUNCTION_PREFIX}-report`
+  try {
+    await lambda.invoke({
+      LogType: 'Tail',
+      FunctionName: functionName,
+      Payload: JSON.stringify({ results }) // pass params
+    }).promise()
+    return { success: true }
+  } catch (error) {
+    console.error(`Error executing lambda due to: ${error}`)
+    return { success: false, error }
+  }
 }

@@ -31,29 +31,53 @@ export interface FailedEvent {
 }
 
 export interface UploadResult {
+    service: ExportService
     errors: Array<FailedEvent>,
     totalEvents: number,
-    file: string
+    file: string,
+    dateOfFile: string,
+    status: UploadResultStatus
 }
 
-export function typeToString(type: ServiceType) {
-    switch (type) {
-        case ServiceType.Branch:
-            return 'Branch'
-        case ServiceType.Tune:
-            return 'Tune'
-    }
+export enum ExportService {
+    None = "None",
+    Segment = "Segment",
+    Amplitude = "Amplitude",
+    Mixpanel = "Mixpanel"
 }
 
-export function typeFromValue(value: string) {
-    if (value === typeToString(ServiceType.Tune)) {
-        return ServiceType.Tune
-    }
-    return ServiceType.Branch
+export enum EventTopic {
+    Click = "eo_click",
+    View = "eo_branch_cta_view",
+	Commerce = "eo_commerce_event",
+    Content = "eo_content_event",
+    Install = "eo_install",
+    Open = "eo_open",
+    PageView = "eo_pageview",
+    Reinstall = "eo_reinstall",
+    SMSSent = "eo_sms_sent",
+    UserLifecycleEvent = "eo_user_lifecycle_event",
+    WebSessionStart = "eo_web_session_start",
+    WebToAppAutoRedirect = "eo_web_to_app_auto_redirect"
 }
 
 export interface Response {
     statusCode: number,
     body: string,
     isBase64Encoded: boolean
-  }
+}
+
+export enum UploadResultStatus {
+    Successful,
+    ContainsErrors,
+    Failed
+}
+
+export interface JobReport {
+    service: String,
+    date: String,
+    events_count: number,
+    failed_events_count: number,
+    messages?: String[],
+    errors?: String[]
+}

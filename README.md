@@ -40,6 +40,10 @@ OFFLINE=true // For offline DynamoDB support.
 2. Run `brew install docker`
 3. Run `docker pull lambci/lambda`
 4. Run `npm run install:dynamodb`
-5. Run `npm run start`
+5. Run `npm run s3:create:bucket`
+6. Run `npm run start`
+
+Email reports:
+In order to send email reports you will need to verify the email addresses that need to send those reports, this can be done from the AWS console here: https://console.aws.amazon.com/ses/home?region=us-east-1#verified-senders-email:
 
 Local services will now be available at http://localhost:4000/

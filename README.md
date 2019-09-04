@@ -13,7 +13,9 @@ Then run `npm install` from the root folder to install dependencies
 
 Test by running `serverless --help`
 
-Run `sls config credentials --provider aws --key {key} --secret {secret}` to complete your setup
+Run `sls config credentials --provider aws --key {key} --secret {secret}` to complete your setup.
+
+Note: After ran the above to setup the right credentials,just run npm run deploy and willl automatically configure your services. No need for extra setup on AWS
 
 # Deployment
 

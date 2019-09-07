@@ -13,40 +13,56 @@ Then run `npm install` from the root folder to install dependencies
 
 Test by running `serverless --help`
 
-Run `npm run setup` to configure your serverless environment (note you may need to add your AWS Access Key ID and Secret to the package.json setup script)
+Run `npm run install` to configure your serverless environment (note you may need to add your AWS Access Key ID and Secret to the package.json setup script)
 
-Create the template files bucket:
-Run `npm run s3:create:bucket`
+If you want to avoid the prompts you can create a `.env` file in the root of your project and add the following:
+
+```
+{
+  "appName": // your app name - this needs to be unique,
+  "stage": // either dev, stg or prd,
+  "region": // AWS region e.g. us-east-1,
+  "awsAccessKeyId": // AWS key id used to create buckets and upload files,
+  "awsSecretKey": // AWS secret key,
+  "branchKey": // Branch key off of the Branch dashboard https://branch.dashboard.branch.io/account-settings
+  "branchSecret": // Branch secret off of the Branch dashboard https://branch.dashboard.branch.io/account-settings
+  "emailReceivers": //Comma seperated list of report receivers to which reports will be sent, these need to be verified on AWS,
+  "emailSender": // Email address from which report will be sent,
+  "segmentKey": // If using Segment enter your Segment.com write key,
+  "segmentExcludedTopics": // Events to exclude from the upload see below,
+  "amplitudeKey": // If using Amplitude, your Amplitude API key,
+  "amplitudeExcludedTopics": // Events to exclude from the upload see below,
+}
+```
+
+Possible event types that can be excluded from being uploaded:   
+```
+Click
+View
+Commerce
+Content
+Install
+Open
+PageView
+Reinstall
+SMSSent
+UserLifecycleEvent
+WebSessionStart
+WebToAppAutoRedirect
+```
 
 # Deployment
 
-Run `npm run deploy --verbose`
+Run `npm run deploy`
 
-# Testing
+# Post deployment setup
 
-Visit https://console.aws.amazon.com/lambda/home
+CloudFormation configuration of bucket events has not yet been implemented, so it is important to enable the exports bucket to trigger the transform Lambda on all create events.
 
-## Using Serverless Offline
+Cloudwatch events also need to be setup to schedule event triggers on `start` and `download` lambdas. The `start` event can be triggered to run every 6-12 hours. The `download` can be triggered every 3-6 hours. The results of these calls are idempotent.
 
-Create a `.env` file in the root folder that looks like:
-
-```
-BRANCH_KEY=key_live...
-BRANCH_SECRET=secret_live...
-ACCESS_KEY_ID={AWS_ACCESS_KEY_ID - used to access S3 and Lambda}
-ACCESS_SECRET_KEY={ACCESS_SECRET_KEY - used to access S3 and Lambda}
-SERVICE_TYPE=Branch { either Branch or Tune as Tune exports function differently}
-OFFLINE=true // For offline DynamoDB support.
-```
-
-1. Install Docker here: https://docs.docker.com/docker-for-mac/install/
-2. Run `brew install docker`
-3. Run `docker pull lambci/lambda`
-4. Run `npm run install:dynamodb`
-5. Run `npm run s3:create:bucket`
-6. Run `npm run start`
-
-Email reports:
-In order to send email reports you will need to verify the email addresses that need to send those reports, this can be done from the AWS console here: https://console.aws.amazon.com/ses/home?region=us-east-1#verified-senders-email:
-
-Local services will now be available at http://localhost:4000/
+# TODOs:
+- Automate both Cloudwatch events and bucket create events
+- Add support for marking uploads as complete in DynamoDB
+- Add manual retry capability
+- Add support for Mixpanel

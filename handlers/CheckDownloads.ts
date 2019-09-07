@@ -4,7 +4,7 @@ import dotenv from 'dotenv'
 import { Response, File } from '../model/Models'
 import { Database } from '../database/Database'
 import * as pathUtil from 'path'
-import { lambda, s3 } from '../config/Config'
+import { lambda, s3 } from '../utils/Config'
 
 const database = new Database()
 

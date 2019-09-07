@@ -3,7 +3,7 @@ import { Response, UploadResult, ExportService } from '../model/Models'
 import { parse } from 'papaparse'
 import BranchEvent from '../model/BranchEvent'
 import { getFile } from '../utils/s3'
-import { configuredServices, excludedTopics, lambda } from '../config/Config'
+import { configuredServices, lambda } from '../utils/Config'
 import { uploadToSegment } from '../event-uploaders/SegmentUploader';
 import { uploadToAmplitude } from '../event-uploaders/AmplitudeUploader';
 
@@ -11,21 +11,11 @@ export const run = async (event: S3CreateEvent, _context: Context, _callback: Ca
   console.info(`New file arrived: ${JSON.stringify(event.Records[0])}`)
   const bucket = event.Records[0].s3.bucket.name
   const filename = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, " "))
-
-  if (!shouldUpload(filename)) {
-    const message = `File - ${filename} marked as excluded, skipping...`
-    console.info(message)
-    return {
-      statusCode: 200,
-      body: message,
-      isBase64Encoded: false
-    }
-  }
   try {
     const file = await getFile(bucket, filename)
     console.debug(`Uploading results for: ${bucket}/${filename}`)
     const uploadResults = await transformAndUpload(file, filename)
-    console.debug(`Upload completed - results: ${JSON.stringify(uploadResults)}`)
+    console.debug(`Upload completed.`)
 
     const reported = await sendJobReport(uploadResults)
     if (!!reported.error) {
@@ -55,16 +45,6 @@ export const run = async (event: S3CreateEvent, _context: Context, _callback: Ca
     }
     return failed
   }
-}
-
-export function shouldUpload(filename: string): Boolean {
-  const topics = excludedTopics()
-  for (const topic in topics.values) {
-    if (filename.indexOf(topic) >= 0) {
-      return false
-    }
-  }
-  return true
 }
 
 export async function transformAndUpload(file: string, filename: string): Promise<Array<UploadResult>> {

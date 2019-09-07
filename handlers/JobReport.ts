@@ -1,6 +1,6 @@
 import { APIGatewayEvent, Context, Callback, APIGatewayProxyHandler } from "aws-lambda"
 import { UploadResult, UploadResultStatus, Response, JobReport } from "../model/Models"
-import { reportReceivers, reportSender, templatesBucket } from "../config/Config"
+import { reportReceivers, reportSender, templatesBucket } from "../utils/Config"
 import { sendEmail } from "../database/Email"
 import { initMustache } from "../transformers/Transformer"
 import { getFile } from "../utils/s3"

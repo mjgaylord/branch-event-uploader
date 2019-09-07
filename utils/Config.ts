@@ -5,25 +5,31 @@ export function serviceType(): ServiceType {
   const env = process.env.SERVICE_TYPE || 'Branch'
   if (env === 'Tune') {
     return ServiceType.Tune
+
   }
   return ServiceType.Branch
 }
 
 export const s3 = new AWS.S3({
-  accessKeyId: process.env.ACCESS_KEY_ID,
-  secretAccessKey: process.env.ACCESS_SECRET_KEY,
-  region: 'us-east-1'
+  // accessKeyId: process.env.ACCESS_KEY_ID,
+  // secretAccessKey: process.env.ACCESS_SECRET_KEY,
+  region: process.env.REGION
 })
 
 export const lambda = new AWS.Lambda({
-  accessKeyId: process.env.ACCESS_KEY_ID,
-  secretAccessKey: process.env.ACCESS_SECRET_KEY,
-  region: 'us-east-1'
+  // accessKeyId: process.env.ACCESS_KEY_ID,
+  // secretAccessKey: process.env.ACCESS_SECRET_KEY,
+  region: process.env.REGION
 });
 
+export const secretsManager = new AWS.SecretsManager({
+  region: process.env.REGION
+})
+
 export const templatesBucket = process.env.TEMPLATES_BUCKET
-export const reportReceivers = process.env.REPORT_RECEIVER_MAIL
-export const reportSender = process.env.REPORT_SENDER_MAIL
+export const reportReceivers = process.env.EMAIL_RECEIVERS
+export const reportSender = process.env.EMAIL_SENDER
+export const exportsTableName = process.env.DYNAMODB_TABLE
 
 export function configuredServices(): Array<ExportService> {
   const services = process.env.EXPORT_SERVICES.split(',')
@@ -45,8 +51,8 @@ export function configuredServices(): Array<ExportService> {
   return services
 }
 
-export const excludedTopics = (): Array<EventTopic> => {
-  return process.env.EXPORT_SERVICES.split(',')
+export const excludedTopics = (config: string): Array<EventTopic> => {
+  return config.split(',')
     .map(s => s.trim())
     .map(s => {
       switch (s) {

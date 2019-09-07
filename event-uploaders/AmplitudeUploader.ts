@@ -1,14 +1,22 @@
 import BranchEvent from '../model/BranchEvent'
 import { UploadResult, FailedEvent, UploadResultStatus, ExportService } from '../model/Models'
 import { getFile, loadTemplates } from '../utils/s3'
-import { templatesBucket } from '../config/Config'
-import { dateInFilename } from '../utils/StringUtils'
+import { templatesBucket } from '../utils/Config'
+import { dateInFilename, hasData } from '../utils/StringUtils'
 import axios from 'axios'
 import { AmplitudeTransformer } from '../transformers/AmplitudeTransformer'
 import AmplitudeEvent from '../model/AmplitudeEvent'
+import { getSecret, Secret } from '../utils/Secrets'
+import { shouldUpload } from './UploaderFunctions'
 
 export async function uploadToAmplitude(events: BranchEvent[], filename: string): Promise<UploadResult> {
   try {
+    const excludedConfig = process.env.AMPLITUDE_EXCLUDED_TOPICS
+    if (!shouldUpload(filename, excludedConfig)) {
+      const message = `File - ${filename} marked as excluded, skipping...`
+      console.info(message)
+      return
+    }
     return upload(events, filename)
   } catch (error) {
     return {
@@ -25,8 +33,8 @@ export async function uploadToAmplitude(events: BranchEvent[], filename: string)
     const template = await getFile(templatesBucket, 'amplitude/AMPLITUDE.mst')
     const partials = await loadTemplates(templatesBucket, 'amplitude/partials')
     const transformer = new AmplitudeTransformer(template, partials)
-    let errors = new Array<FailedEvent>()
-    let transformedEvents = new Array<AmplitudeEvent>()
+    var errors = new Array<FailedEvent>()
+    var transformedEvents = new Array<AmplitudeEvent>()
     for (let i = 0; i < events.length; i++) {
       const event = events[i]
       try {
@@ -34,25 +42,38 @@ export async function uploadToAmplitude(events: BranchEvent[], filename: string)
         if (!amplitudeEvent) {
           throw new Error(`Transform failed for event`)
         }
-        transformedEvents.push(amplitudeEvent)
+        if (hasData(amplitudeEvent.device_id, amplitudeEvent.user_id)) {
+          transformedEvents.push(amplitudeEvent)
+        } else {
+          const errorMessage = `Skipped event due to missing deviceId or userId`
+          console.debug(errorMessage)
+          errors.push({ event, reason:  errorMessage})
+        }
       } catch (error) {
+        console.error(`Error transforming event: ${JSON.stringify(error)}`)
         errors.push({ event, reason: JSON.stringify(error) })
       }
     }
-    const result = await sendData(transformedEvents)
-
-    let status = UploadResultStatus.Successful
+    var status = UploadResultStatus.Successful
     if (errors.length === events.length) {
       status = UploadResultStatus.Failed
     } else if (errors.length > 0) {
       status = UploadResultStatus.ContainsErrors
     }
+    try {
+      if (transformedEvents.length === 0){
+        throw new Error('No events available to upload to Amplitude')
+      }
+      await sendData(transformedEvents)
+    } catch(error) {
+      console.error(`Error uploading events to Amplitude: ${error.message}`)
+      status = UploadResultStatus.Failed
+    }
     return {
       totalEvents: events.length,
-      service: ExportService.Segment,
+      service: ExportService.Amplitude,
       dateOfFile: dateInFilename(filename),
       file: filename,
-      messages: JSON.stringify(result),
       errors,
       status
     }
@@ -66,14 +87,15 @@ export async function uploadToAmplitude(events: BranchEvent[], filename: string)
         'Accept': '*/*'
       }
     })
-
+    console.debug(`Amplitude events: ${JSON.stringify(events)}`)
     try {
       const body = {
-        "api_key": process.env.AMPLITUDE_API_KEY,
+        "api_key": await getSecret(Secret.AmplitudeApiKey),
         "events": events
       }
-      const response = await api.post('/batch', body)
       console.debug('Uploading events to Amplitude...')
+      const response = await api.post('/batch', body)
+      console.debug(`Amplitude upload completed with response: ${response.status}`)
       return response
     } catch (error) {
       console.warn(`Error uploading events to Amplitude: ${error.message}`)

@@ -1,29 +1,25 @@
 {
-      "user_id": "{{user_data_developer_identity}}",
-      "device_id": "{{deviceIdFunction}}",
-      "event_type": "{{name}}",
-      "time": {{timestamp}},
-      "event_properties": {
-        {{allCustomDataFunction}},
-        {{allLastAttributedTouchDataFunction}}
-      },
-      "user_properties": {
-        {{> campaign}}
-      },
-      "groups": {},
-      "app_version": "{{user_data_app_version}}",
-      "platform": "{{user_data_os}}",
-      "os_name": "{{user_data_os}}",
-      "os_version": "{{user_data_os_version}}",
-      "device_brand": "{{user_data_brand}}",
-      "device_model": "{{user_data_model}}",
-      "country": "{{user_data_geo_country_code}}",
-      "language": "{{user_data_language}}"
-      "ip": "{{user_data_ip}}",
-      "idfa": "{{user_data_idfa}}",
-      "idfv": "{{user_data_idfv}}",
-      "adid": "{{user_data_aaid}}",
-      "android_id": "{{user_data_android_id}}",
-      "event_id": {{id}},
-      "insert_id": "{{id}}"
-    }
+  {{#user_data_developer_identity}}"user_id": "{{user_data_developer_identity}}",{{/user_data_developer_identity}}
+  {{#deviceIdFunction}}"device_id": "{{deviceIdFunction}}",{{/deviceIdFunction}}
+  "event_type": "{{name}}",
+  "time": {{timestamp}},
+  "event_properties": {{touchDataFunction}},
+  "user_properties": {
+    {{> campaign}}
+  },
+  "groups": {},
+  "app_version": "{{user_data_app_version}}",
+  "platform": "{{user_data_os}}",
+  "os_name": "{{user_data_os}}",
+  "os_version": "{{user_data_os_version}}",
+  "device_brand": "{{user_data_brand}}",
+  "device_model": "{{user_data_model}}",
+  "country": "{{user_data_geo_country_code}}",
+  "language": "{{user_data_language}}",
+  "ip": "{{user_data_ip}}",
+  "idfa": "{{user_data_idfa}}",
+  "idfv": "{{user_data_idfv}}",
+  "adid": "{{user_data_aaid}}",
+  "android_id": "{{user_data_android_id}}",
+  "insert_id": "{{id}}"
+}

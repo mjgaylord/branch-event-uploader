@@ -9,35 +9,34 @@ plugins:
 
 # serverless offline config
 custom:
+  config: ${file(config.json)}
+  app-name: ${self:custom.config.appName}
   serverless-offline:
       port: 4000
       babelOptions:
         presets: ["es2015"]
   dynamodb:
     stages:
-      - dev
+      - ${self:custom.config.stage}
     start:
       migrate: true
   s3Buckets:
-    BUCKET_NAME: ${self:service}-${opt:stage, self:provider.stage}-exports-bucket
+    BUCKET_NAME: ${self:custom.app-name}-${self:service}-${self:custom.config.stage}-exports-bucket
     
 provider:
   name: aws
-  region: us-east-1
   runtime: nodejs8.10
   environment:
-    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
-    BRANCH_KEY: add_here
-    BRANCH_SECRET: add_here
-    ACCESS_KEY_ID: add_here
-    ACCESS_SECRET_KEY: add_here
-    SERVICE_TYPE: Branch
-    SEGMENT_WRITE_KEY: add_here
-    TEMPLATES_BUCKET: data-export-lambda-templates
-    REPORT_RECEIVER_MAIL: add_report_receivers_separated_by_commas
-    REPORT_SENDER_MAIL: add_sender_email
-    EXPORT_SERVICES: Segment # Options are Segment, Mixpanel, Amplitude for now
-    EXCLUDED_TOPICS: Click # These files will get ignored from uploading. See Models.ts - ExcludedType for options
+    REGION: ${self:custom.config.region}
+    STAGE: ${self:custom.config.stage}
+    APP_NAME: ${self:custom.config.appName}
+    DYNAMODB_TABLE: ${self:custom.app-name}-${self:service}-${self:custom.config.stage}
+    EMAIL_RECEIVERS: ${self:custom.config.emailReceivers}
+    EMAIL_SENDER: ${self:custom.config.emailSender}
+    SEGMENT_EXCLUDED_TOPICS: ${self:custom.config.segmentExcludedTopics}
+    AMPLITUDE_EXCLUDED_TOPICS: ${self:custom.config.amplitudeExcludedTopics}
+    EXPORT_SERVICES: ${self:custom.config.services}
+    TEMPLATES_BUCKET: ${self:custom.config.templatesBucket}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -49,32 +48,40 @@ provider:
         - dynamodb:DeleteItem
         - lambda:InvokeFunction
         - ses:SendEmail
-        - ses:SendRawEmail
+        - secretsmanager:GetSecretValue
+        - s3:*
       Resource: 
-        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
-        - "arn:aws:lambda:${opt:region, self:provider.region}:*:*"
+        - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+        - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}/index/*"
+        - "arn:aws:lambda:${self:custom.config.region}:*:function:*"
+        - "arn:aws:ses:${self:custom.config.region}:*"
+        - "arn:aws:ses:${self:custom.config.region}:*:identity/*"
+        - "arn:aws:secretsmanager:${self:custom.config.region}:*"
+        - "arn:aws:s3:::${self:provider.environment.TEMPLATES_BUCKET}/*"
+        - "arn:aws:s3:::${self:custom.s3Buckets.BUCKET_NAME}/*"
         - "arn:aws:s3:::${self:custom.s3Buckets.BUCKET_NAME}"
-        - "arn:aws:ses:${opt:region, self:provider.region}:*"
+        - "arn:aws:s3:::${self:provider.environment.TEMPLATES_BUCKET}"
+        - "arn:aws:logs:${self:custom.config.region}:*:log-group:*"
+        - "arn:aws:logs:${self:custom.config.region}:*:log-group:*:*:*"
 
 functions:
   start:
     handler: handlers/StartExports.run
+    timeout: 120
           
   download:
     handler: handlers/CheckDownloads.run
+    timeout: 120
     environment:
       FUNCTION_PREFIX: ${self:service}-${opt:stage, self:provider.stage}
       EXPORTS_BUCKET: ${self:custom.s3Buckets.BUCKET_NAME}
-    events:
-      - http:
-          method: get
-          path: download
 
   copy:
     handler: handlers/CopyFile.run
 
   status:
     handler: handlers/CheckStatus.run
+    timeout: 30
     events:
       - http:
           method: get
@@ -82,18 +89,18 @@ functions:
 
   transform:
     handler: handlers/Transform.run
+    timeout: 120
     environment:
       FUNCTION_PREFIX: ${self:service}-${opt:stage, self:provider.stage}
     events:
       - s3:
         bucket: ${self:custom.s3Buckets.BUCKET_NAME}
         event: s3:ObjectCreated:*
-        rules:
-          - suffix: .csv
         existing: true
   
   report:
     handler: handlers/JobReport.run
+    timeout: 120
 
   # testTransform:
   #   handler: handlers/TestTransform.run
@@ -134,6 +141,12 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: '${self:custom.s3Buckets.BUCKET_NAME}'
+        LifecycleConfiguration: 
+          Rules:
+              - Id: DeleteEverythingInSevenDays
+                Prefix: ''
+                Status: Enabled
+                ExpirationInDays: 7
     TransformLambdaPermissionS3:
       Type: 'AWS::Lambda::Permission'
       Properties:

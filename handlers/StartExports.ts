@@ -5,7 +5,8 @@ import * as moment from 'moment'
 import dotenv from 'dotenv'
 import { Response, File, ServiceType } from '../model/Models'
 import { Database } from '../database/Database'
-import { serviceType } from '../config/Config';
+import { serviceType } from '../utils/Config'
+import { getSecret, Secret } from '../utils/Secrets'
 
 const database = new Database()
 
@@ -21,10 +22,13 @@ export const run: APIGatewayProxyHandler = async (_event: any = {}, _context: Co
   const api = axios.create({
     baseURL: "https://api2.branch.io/v3"
   })
+  
   try {
+    const key = await getSecret(Secret.BranchKey)
+    const secret = await getSecret(Secret.BranchSecret)
     const response = await api.post('/export/', {
-      branch_key: process.env.BRANCH_KEY,
-      branch_secret: process.env.BRANCH_SECRET,
+      branch_key: key,
+      branch_secret: secret,
       export_date: yesterday
     })
     console.debug('Exports requested successfully. Saving to database...')

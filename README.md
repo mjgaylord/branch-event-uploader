@@ -13,13 +13,14 @@ Then run `npm install` from the root folder to install dependencies
 
 Test by running `serverless --help`
 
-Run `sls config credentials --provider aws --key {key} --secret {secret}` to complete your setup.
+Run `npm run setup` to configure your serverless environment (note you may need to add your AWS Access Key ID and Secret to the package.json setup script)
 
-Note: After ran the above to setup the right credentials,just run npm run deploy and willl automatically configure your services. No need for extra setup on AWS
+Create the template files bucket:
+Run `npm run s3:create:bucket`
 
 # Deployment
 
-Run `sls deploy --verbose`
+Run `npm run deploy --verbose`
 
 # Testing
 

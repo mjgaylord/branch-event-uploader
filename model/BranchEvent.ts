@@ -136,6 +136,8 @@ export default interface BranchEvent {
     timestampMillisFunction: Function,
     joinedTagsFunction: Function,
     lowerCasedFunction: Function,
+    allCustomDataFunction: Function,
+    allLastAttributedTouchDataFunction: Function
 }
 
 const TimestampMillis = function(): number {
@@ -160,8 +162,24 @@ const LowerCased = function(): Function {
     }
 }
 
+const customData = function(): string {
+    return this.last_attributed_touch_data_custom_fields
+}
+
+const lastAttributedTouchData = function(): any {
+    const lastAttributedTouchData = {}
+    for (const key in this.keys()) {
+        if (key.startsWith("last_attributed_touch_data")) {
+            lastAttributedTouchData[key] = this[key]
+        }
+    }
+    return lastAttributedTouchData
+}
+
 export function enableFunctions(event: BranchEvent) {
     event.timestampMillisFunction = TimestampMillis
     event.joinedTagsFunction = JoinedTags
     event.lowerCasedFunction = LowerCased
+    event.allCustomDataFunction = customData
+    event.allLastAttributedTouchDataFunction = lastAttributedTouchData
 }

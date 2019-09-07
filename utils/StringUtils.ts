@@ -6,3 +6,7 @@ export function dateInFilename(filename: string): string {
   }
   return matches[0]
 }
+
+export function hasData(...values: string[]): boolean {
+  return values.filter(v => !!v && v.length > 0).length > 0
+}

@@ -1,7 +1,7 @@
 import { APIGatewayProxyHandler, Context, Callback, APIGatewayEvent } from 'aws-lambda'
 import 'source-map-support/register'
 import * as pathUtil from 'path'
-import { s3 } from '../config/Config'
+import { s3 } from '../utils/Config'
 import { Database } from '../database/Database'
 import * as zlib from 'zlib'
 import * as https from 'https'

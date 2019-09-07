@@ -1,3 +1,5 @@
+import { isString } from "util"
+
 export default interface BranchEvent {
     id: number,
     name: string,
@@ -37,7 +39,7 @@ export default interface BranchEvent {
     last_attributed_touch_data_plus_via_features: [],
     last_attributed_touch_data_dollar_3p: string,
     last_attributed_touch_data_plus_web_format: string,
-    last_attributed_touch_data_custom_fields: string,
+    last_attributed_touch_data_custom_fields: any,
     days_from_last_attributed_touch_to_event: string,
     hours_from_last_attributed_touch_to_event: string,
     minutes_from_last_attributed_touch_to_event: string,
@@ -131,23 +133,23 @@ export default interface BranchEvent {
     user_data_build: string,
     user_data_internet_connection_type: string,
     hash_version: string,
-    
+
     // Functions - each of these need to be defined and enabled below
     timestampMillisFunction: Function,
     joinedTagsFunction: Function,
     lowerCasedFunction: Function,
-    allCustomDataFunction: Function,
-    allLastAttributedTouchDataFunction: Function
+    touchDataFunction: Function,
+    deviceIdFunction: Function,
 }
 
-const TimestampMillis = function(): number {
+const TimestampMillis = function (): number {
     if (!this.timestamp) {
         return (new Date()).getTime()
-    } 
+    }
     return Math.ceil(this.timestamp / 1000)
 }
 
-const JoinedTags = function(): string {
+const JoinedTags = function (): string {
     const tagString: string = this.last_attributed_touch_data_tilde_tags
     if (tagString.length === 0) {
         return ''
@@ -156,30 +158,34 @@ const JoinedTags = function(): string {
     return tags.join(',')
 }
 
-const LowerCased = function(): Function {
-    return (text: string, render: Function) => { 
+const LowerCased = function (): Function {
+    return (text: string, render: Function) => {
         return render(text).toLowerCase()
     }
 }
 
-const customData = function(): string {
-    return this.last_attributed_touch_data_custom_fields
-}
-
-const lastAttributedTouchData = function(): any {
-    const lastAttributedTouchData = {}
-    for (const key in this.keys()) {
-        if (key.startsWith("last_attributed_touch_data")) {
+const TouchData = function (): string {
+    var lastAttributedTouchData = {}
+    for (const key of Object.keys(this)) {
+        if (key.startsWith('last_attributed_touch_data')) {
             lastAttributedTouchData[key] = this[key]
         }
     }
-    return lastAttributedTouchData
+    return JSON.stringify(lastAttributedTouchData)
+}
+
+const AnyDeviceId = function (): string | undefined {
+    if (isString(this)) { //hack for now, need to understand why the device id is being called twice here
+        return this
+    }
+    const device = this.user_data_aaid || this.user_data_android_id || this.user_data_idfa || this.user_data_idfv
+    return device
 }
 
 export function enableFunctions(event: BranchEvent) {
     event.timestampMillisFunction = TimestampMillis
     event.joinedTagsFunction = JoinedTags
     event.lowerCasedFunction = LowerCased
-    event.allCustomDataFunction = customData
-    event.allLastAttributedTouchDataFunction = lastAttributedTouchData
+    event.touchDataFunction = TouchData
+    event.deviceIdFunction = AnyDeviceId
 }

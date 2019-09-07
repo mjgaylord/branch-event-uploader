@@ -1,4 +1,4 @@
-import { s3 } from '../config/Config'
+import { s3 } from './Config'
 import * as pathUtil from 'path'
 
 export async function getFile(bucket: string, filename: string): Promise<string> {
@@ -15,11 +15,10 @@ export async function loadTemplates(bucket: string, path?: string): Promise<{}> 
   const objects = await s3.listObjects({
     Bucket: bucket,
     Prefix: path || ''
-  }, (error, data)=> {
+  }, (error, _data)=> {
     if (!!error) {
       throw new Error(`Unable to listObjects due to: ${error}`)
     }
-    console.debug(`${JSON.stringify(data)}`)
   }).promise()
   const keys = objects.Contents.map(object => object.Key)
   let partials = {}
@@ -27,7 +26,6 @@ export async function loadTemplates(bucket: string, path?: string): Promise<{}> 
   templates.map(template => {
     partials[template.name] = template.contents   
   })
-  console.debug(`partials: ${JSON.stringify(partials)}`)
   return partials
 }
 

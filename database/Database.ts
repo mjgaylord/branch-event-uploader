@@ -4,18 +4,19 @@ import { DocumentClient, QueryOutput } from 'aws-sdk/clients/dynamodb'
 import * as AWS from 'aws-sdk'
 import dotenv from 'dotenv'
 import { typeToString } from '../functions/Functions'
+import { exportsTableName } from '../utils/Config'
 
 export class Database {
     dynamoDb: DocumentClient
-    downloadTable = process.env.DYNAMODB_TABLE
+    downloadTable = exportsTableName
 
     constructor() {
-        AWS.config.update({ region: 'us-east-1' })
+        AWS.config.update({ region: process.env.REGION })
         dotenv.config()
         // if we're running offline we need to specify the endpoint as localhost
         const endpoint = process.env.OFFLINE ? { endpoint: 'http://localhost:8000' } : {}
         this.dynamoDb = new DynamoDB.DocumentClient({
-            region: 'us-east-1',
+            region: process.env.REGION,
             ...endpoint
         })
     }

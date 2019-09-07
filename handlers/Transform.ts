@@ -1,14 +1,11 @@
-//@ts-ignore
-import Analytics from 'analytics-node'
 import { Context, Callback, S3CreateEvent } from 'aws-lambda'
-import { Response, FailedEvent, UploadResult, UploadResultStatus, ExportService } from '../model/Models'
+import { Response, UploadResult, ExportService } from '../model/Models'
 import { parse } from 'papaparse'
 import BranchEvent from '../model/BranchEvent'
-import { getFile, loadTemplates } from '../utils/s3'
-import { templatesBucket, configuredServices, excludedTopics, lambda } from '../config/Config'
-import { SegmentTransformer } from '../transformers/SegmentTransformer';
-
-const analytics = new Analytics(process.env.SEGMENT_WRITE_KEY);
+import { getFile } from '../utils/s3'
+import { configuredServices, excludedTopics, lambda } from '../config/Config'
+import { uploadToSegment } from '../event-uploaders/SegmentUploader';
+import { uploadToAmplitude } from '../event-uploaders/AmplitudeUploader';
 
 export const run = async (event: S3CreateEvent, _context: Context, _callback: Callback): Promise<any> => {
   console.info(`New file arrived: ${JSON.stringify(event.Records[0])}`)
@@ -30,7 +27,6 @@ export const run = async (event: S3CreateEvent, _context: Context, _callback: Ca
     const uploadResults = await transformAndUpload(file, filename)
     console.debug(`Upload completed - results: ${JSON.stringify(uploadResults)}`)
 
-    //TODO: Send JobReport
     const reported = await sendJobReport(uploadResults)
     if (!!reported.error) {
       const result: Response = {
@@ -49,7 +45,7 @@ export const run = async (event: S3CreateEvent, _context: Context, _callback: Ca
   } catch (error) {
     console.error(
       'Unable to download ' + bucket + '/' + filename +
-      ' and upload to Segment' +
+      ' and upload events' +
       ' due to an error: ' + error
     )
     const failed: Response = {
@@ -80,13 +76,13 @@ export async function transformAndUpload(file: string, filename: string): Promis
     return uploadResults
   }
   console.info(`CSV converted to JSON uploading ${events.length} events to: ${services.join(', ')}`)
-  return Promise.all(services.map(async service => {
+  return await Promise.all(services.map(async service => {
     console.debug(`Uploading to ${service}...`)
     switch (service) {
       case ExportService.Segment:
         return await uploadToSegment(events, filename)
       case ExportService.Amplitude:
-        throw new Error(`Service not yet implemented: ${service}`) 
+        return await uploadToAmplitude(events, filename)
       case ExportService.Mixpanel:
         throw new Error(`Service not yet implemented: ${service}`)
     }
@@ -105,62 +101,6 @@ function transformCSVtoJSON(csv: string): BranchEvent[] {
     throw new Error(JSON.stringify(errors))
   }
   return result.data
-}
-
-async function uploadToSegment(events: BranchEvent[], filename: string): Promise<UploadResult> {
-  const template = await getFile(templatesBucket, 'segment/SEGMENT.mst')
-  const partials = await loadTemplates(templatesBucket, 'segment/partials')
-  const transformer = new SegmentTransformer(template, partials)
-  let errors = new Array<FailedEvent>()
-  for (let i = 0; i < events.length; i++) {
-    const event = events[i]
-    // More in the docs here: https://segment.com/docs/spec/track/
-    try {
-      const segmentEvent = transformer.transform(event)
-      if (!segmentEvent) {
-        throw new Error(`Transform failed for event`)
-      }
-      analytics.track(segmentEvent)
-    } catch (error) {
-      errors.push({ event, reason: JSON.stringify(error) })
-    }
-  }
-  await completed()
-
-  let status = UploadResultStatus.Successful
-  if (errors.length === events.length) {
-    status = UploadResultStatus.Failed
-  } else if (errors.length > 0) {
-    status = UploadResultStatus.ContainsErrors
-  }
-  return {
-    totalEvents: events.length,
-    service: ExportService.Segment,
-    dateOfFile: dateInFilename(filename),
-    file: filename,
-    errors,
-    status
-  }
-}
-
-const completed = (): Promise<any> => {
-  return new Promise((resolve, reject) => {
-    analytics.flush((err, batch) => {
-      if (!!err) {
-        reject(err)
-        return
-      }
-      resolve(batch)
-    })
-  })
-}
-
-function dateInFilename(filename: string): string {
-  const matches = filename.match('[0-9]{4}[-|\/]{1}[0-9]{2}[-|\/]{1}[0-9]{2}')
-  if (matches.length === 0) {
-    return "Unknown"
-  }
-  return matches[0]
 }
 
 async function sendJobReport(results: Array<UploadResult>) {

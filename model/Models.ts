@@ -36,7 +36,8 @@ export interface UploadResult {
     totalEvents: number,
     file: string,
     dateOfFile: string,
-    status: UploadResultStatus
+    status: UploadResultStatus,
+    messages?: string
 }
 
 export enum ExportService {

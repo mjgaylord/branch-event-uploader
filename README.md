@@ -13,6 +13,8 @@ Then run `npm install` from the root folder to install dependencies
 
 Test by running `serverless --help`
 
+Note: You may need to install Docker for deployment to work if you have not installed it already. The simplest is to install Docker Desktop: https://docs.docker.com/install/
+
 Run `npm run install` to configure your serverless environment (note you may need to add your AWS Access Key ID and Secret to the package.json setup script)
 
 If you want to avoid the prompts you can create a `.env` file in the root of your project and add the following:

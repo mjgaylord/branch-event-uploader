@@ -48,7 +48,7 @@ export const run = async (event: S3CreateEvent, _context: Context, _callback: Ca
 }
 
 export async function transformAndUpload(file: string, filename: string): Promise<Array<UploadResult>> {
-  const events = await transformCSVtoJSON(file)
+  const events = transformCSVtoJSON(file)
   let uploadResults = Array<UploadResult>()
   const services = configuredServices()
   if (events.length === 0) {

@@ -8,7 +8,7 @@ const templatesBucketSuffix = 'data-export-transform-templates'
 
 module.exports.install = async function () {
   //add keys
-  const result = await this.initialiseConfig()
+  const result = await initialiseConfig()
   console.log(`Configured keys: ${JSON.stringify(Object.keys(result))}`)
 
   let awsConfig = {
@@ -44,7 +44,7 @@ module.exports.install = async function () {
   await this.copyTemplates(s3, bucket)
 }
 
-module.exports.initialiseConfig = async function () {
+const initialiseConfig = async () => {
   const envPath = path.join(__dirname, '.env')
   try {
     const result = await this.readFile(envPath)
@@ -62,6 +62,7 @@ module.exports.initialiseConfig = async function () {
       resolve(result)
     })
   })
+  return result
 }
 
 module.exports.createBucket = async function (s3, bucket) {

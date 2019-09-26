@@ -173,11 +173,11 @@ const TouchData = function (): string {
             lastAttributedTouchData[key] = this[key]
         }
     }
-    if (this.last_attributed_touch_data_custom_fields) {
-        for (const key of Object.keys(this.last_attributed_touch_data_custom_fields)) {
-            lastAttributedTouchData[key] = this.last_attributed_touch_data_custom_fields[key]
-        }
-    }
+    // if (this.last_attributed_touch_data_custom_fields) {
+    //     for (const key of Object.keys(this.last_attributed_touch_data_custom_fields)) {
+    //         lastAttributedTouchData[key] = this.last_attributed_touch_data_custom_fields[key]
+    //     }
+    // }
     return JSON.stringify(lastAttributedTouchData)
 }
 

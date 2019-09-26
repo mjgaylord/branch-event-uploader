@@ -1,5 +1,5 @@
 {
-  {{#user_data_developer_identity}}"user_id": "{{user_data_developer_identity}}",{{/user_data_developer_identity}}
+  {{#userIdFunction}}"user_id": "{{userIdFunction}}",{{/userIdFunction}}
   {{#deviceIdFunction}}"device_id": "{{deviceIdFunction}}",{{/deviceIdFunction}}
   "event_type": "{{name}}",
   "time": {{timestamp}},

@@ -17,27 +17,27 @@
   "dependencies": {
     "analytics-node": "^3.4.0-beta.1",
     "axios": "^0.19.0",
-    "dotenv": "^8.0.0",
-    "mustache": "^3.0.1",
-    "papaparse": "^5.0.1",
+    "dotenv": "^8.1.0",
+    "mustache": "^3.1.0",
+    "papaparse": "^5.1.0",
     "serverless-dynamodb-client": "0.0.2",
-    "source-map-support": "^0.5.10"
+    "source-map-support": "^0.5.13"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.23",
+    "@types/aws-lambda": "^8.10.31",
     "@types/axios": "^0.14.0",
     "@types/mustache": "^0.8.32",
-    "@types/node": "^10.12.18",
-    "@types/node-fetch": "^2.3.7",
+    "@types/node": "^10.14.18",
+    "@types/node-fetch": "^2.5.1",
     "@types/papaparse": "^5.0.1",
     "prompt": "^1.0.0",
-    "serverless": "^1.49.0",
+    "serverless": "^1.52.2",
     "serverless-dynamodb-local": "^0.2.38",
-    "serverless-offline": "^5.10.1",
+    "serverless-offline": "^5.11.0",
     "serverless-webpack": "^5.3.1",
     "ts-loader": "^5.4.5",
-    "typescript": "^3.5.2",
-    "webpack": "^4.35.2"
+    "typescript": "^3.6.3",
+    "webpack": "^4.40.2"
   },
   "author": "The serverless webpack authors (https://github.com/elastic-coders/serverless-webpack)",
   "license": "MIT"

@@ -140,6 +140,7 @@ export default interface BranchEvent {
     lowerCasedFunction: Function,
     touchDataFunction: Function,
     deviceIdFunction: Function,
+    userIdFunction: Function
 }
 
 const TimestampMillis = function (): number {
@@ -167,8 +168,14 @@ const LowerCased = function (): Function {
 const TouchData = function (): string {
     var lastAttributedTouchData = {}
     for (const key of Object.keys(this)) {
-        if (key.startsWith('last_attributed_touch_data')) {
+        if (key !== 'last_attributed_touch_data_custom_fields' &&
+            key.startsWith('last_attributed_touch_data')) {
             lastAttributedTouchData[key] = this[key]
+        }
+    }
+    if (this.last_attributed_touch_data_custom_fields) {
+        for (const key of Object.keys(this.last_attributed_touch_data_custom_fields)) {
+            lastAttributedTouchData[key] = this.last_attributed_touch_data_custom_fields[key]
         }
     }
     return JSON.stringify(lastAttributedTouchData)
@@ -182,10 +189,21 @@ const AnyDeviceId = function (): string | undefined {
     return device
 }
 
+const AnyUserId = function (): string | undefined {
+    if (isString(this)) {
+        return this
+    }
+    if (this.custom_data && this.custom_data.$amplitude_user_id) {
+        return this.custom_data.$amplitude_user_id
+    }
+    return this.user_data_developer_identity
+}
+
 export function enableFunctions(event: BranchEvent) {
     event.timestampMillisFunction = TimestampMillis
     event.joinedTagsFunction = JoinedTags
     event.lowerCasedFunction = LowerCased
     event.touchDataFunction = TouchData
     event.deviceIdFunction = AnyDeviceId
+    event.userIdFunction = AnyUserId
 }

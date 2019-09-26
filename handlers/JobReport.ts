@@ -92,11 +92,12 @@ const render = async (results: Array<UploadResult>, templatePath: string) : Prom
 
 const reportFromResults = (results: Array<UploadResult>): Array<JobReport> => {
   return results.map(r => {
+    const errors = r.errors && []
     return {
       service: r.service,
       events_count: r.totalEvents,
-      failed_events_count: r.errors.length,
-      errors: r.errors.slice(0, r.errors.length > 50 ? 50 : r.errors.length).map(e => e.reason),
+      failed_events_count: errors.length,
+      errors: errors.slice(0, errors.length > 50 ? 50 : errors.length).map(e => e.reason),
       date: r.dateOfFile,
       filename: r.file
     }

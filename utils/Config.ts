@@ -52,33 +52,36 @@ export function configuredServices(): Array<ExportService> {
 }
 
 export const excludedTopics = (config: string): Array<EventTopic> => {
+  if (!config) {
+    return []
+  }
   return config.split(',')
-    .map(s => s.trim())
+    .map(s => s.trim().toLowerCase())
     .map(s => {
       switch (s) {
-        case 'Click':
+        case 'click':
           return EventTopic.Click
-        case 'View':
+        case 'view':
           return EventTopic.View
-        case 'Commerce':
+        case 'commerce':
           return EventTopic.Commerce
-        case 'Content':
+        case 'content':
           return EventTopic.Content
-        case 'Install':
+        case 'install':
           return EventTopic.Install
-        case 'Open':
+        case 'open':
           return EventTopic.Open
-        case 'PageView':
+        case 'pageview':
           return EventTopic.PageView
-        case 'Reinstall':
+        case 'reinstall':
           return EventTopic.Reinstall
-        case 'SMSSent':
+        case 'smssent':
           return EventTopic.SMSSent
-        case 'UserLifecycleEvent':
+        case 'userlifecycleevent':
           return EventTopic.UserLifecycleEvent
-        case 'WebSessionStart':
+        case 'websessionstart':
           return EventTopic.WebSessionStart
-        case 'WebToAppAutoRedirect':
+        case 'webtoappautoredirect':
           return EventTopic.WebToAppAutoRedirect
       }
     })

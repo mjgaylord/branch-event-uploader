@@ -17,6 +17,7 @@ export async function uploadToAmplitude(events: BranchEvent[], filename: string)
       console.info(message)
       return
     }
+    console.debug(`Uploading file: ${filename}`)
     return upload(events, filename)
   } catch (error) {
     return {
@@ -87,7 +88,6 @@ export async function uploadToAmplitude(events: BranchEvent[], filename: string)
         'Accept': '*/*'
       }
     })
-    console.debug(`Amplitude events: ${JSON.stringify(events)}`)
     try {
       const body = {
         "api_key": await getSecret(Secret.AmplitudeApiKey),

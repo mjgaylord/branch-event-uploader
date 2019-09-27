@@ -1,5 +1,3 @@
-import { isString } from "util"
-
 export default interface BranchEvent {
     id: number,
     name: string,
@@ -165,24 +163,44 @@ const LowerCased = function (): Function {
     }
 }
 
-const TouchData = function (): string {
+// const TouchData = function (): string {
+//     var lastAttributedTouchData = {}
+//     for (const key of Object.keys(this)) {
+//         if (key !== 'last_attributed_touch_data_custom_fields' &&
+//             key.startsWith('last_attributed_touch_data')) {
+//             lastAttributedTouchData[key] = this[key]
+//         }
+//     }
+//     console.debug(`Adding custom fields: ${this.last_attributed_touch_data_custom_fields}`)
+//     if (typeof this.last_attributed_touch_data_custom_fields === 'object') {
+//         for (const key of Object.keys(this.last_attributed_touch_data_custom_fields)) {
+//             lastAttributedTouchData[key] = this.last_attributed_touch_data_custom_fields[key]
+//         }
+//     }
+//     return JSON.stringify(lastAttributedTouchData)
+// }
+
+const TouchData = () => {
     var lastAttributedTouchData = {}
-    for (const key of Object.keys(this)) {
-        if (key !== 'last_attributed_touch_data_custom_fields' &&
-            key.startsWith('last_attributed_touch_data')) {
-            lastAttributedTouchData[key] = this[key]
-        }
-    }
-    // if (this.last_attributed_touch_data_custom_fields) {
-    //     for (const key of Object.keys(this.last_attributed_touch_data_custom_fields)) {
-    //         lastAttributedTouchData[key] = this.last_attributed_touch_data_custom_fields[key]
-    //     }
-    // }
+    const last_attributed_keys = Object.keys(this).filter(k => k.startsWith('last_attributed_touch_data'))
+    last_attributed_keys.forEach(key => {
+      const object = this[key]
+      console.debug(`Object type is: ${typeof object} for key: ${key}`)
+      if (typeof object === 'string' 
+        || typeof object === 'number' 
+        || typeof object === 'boolean'
+        || Array.isArray(object)) {
+            lastAttributedTouchData[key] = object
+      }
+    //   if (typeof object === 'object') {
+    //     lastAttributedTouchData = {...object, ...lastAttributedTouchData}
+    //   }
+    })
     return JSON.stringify(lastAttributedTouchData)
-}
+  }
 
 const AnyDeviceId = function (): string | undefined {
-    if (isString(this)) { //hack for now, need to understand why the device id is being called twice here
+    if (typeof this === 'string') { //hack for now, need to understand why the device id is being called twice here
         return this
     }
     const device = this.user_data_aaid || this.user_data_android_id || this.user_data_idfa || this.user_data_idfv
@@ -190,7 +208,7 @@ const AnyDeviceId = function (): string | undefined {
 }
 
 const AnyUserId = function (): string | undefined {
-    if (isString(this)) {
+    if (typeof this === 'string') {
         return this
     }
     if (this.custom_data && this.custom_data.$amplitude_user_id) {

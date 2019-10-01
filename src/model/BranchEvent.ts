@@ -180,24 +180,42 @@ const LowerCased = function (): Function {
 //     return JSON.stringify(lastAttributedTouchData)
 // }
 
-const TouchData = () => {
+// const TouchData = () => {
+//     var lastAttributedTouchData = {}
+//     const last_attributed_keys = Object.keys(this).filter(k => k.startsWith('last_attributed_touch_data'))
+//     last_attributed_keys.forEach(key => {
+//       const object = this[key]
+//       console.debug(`Object type is: ${typeof object} for key: ${key}`)
+//       if (typeof object === 'string' 
+//         || typeof object === 'number' 
+//         || typeof object === 'boolean'
+//         || Array.isArray(object)) {
+//             lastAttributedTouchData[key] = object
+//       }
+//     //   if (typeof object === 'object') {
+//     //     lastAttributedTouchData = {...object, ...lastAttributedTouchData}
+//     //   }
+//     })
+//     return JSON.stringify(lastAttributedTouchData)
+//   }
+
+const TouchData = function (): string {
     var lastAttributedTouchData = {}
-    const last_attributed_keys = Object.keys(this).filter(k => k.startsWith('last_attributed_touch_data'))
-    last_attributed_keys.forEach(key => {
-      const object = this[key]
-      console.debug(`Object type is: ${typeof object} for key: ${key}`)
-      if (typeof object === 'string' 
-        || typeof object === 'number' 
-        || typeof object === 'boolean'
-        || Array.isArray(object)) {
-            lastAttributedTouchData[key] = object
-      }
-    //   if (typeof object === 'object') {
-    //     lastAttributedTouchData = {...object, ...lastAttributedTouchData}
-    //   }
-    })
+    for (const key of Object.keys(this)) {
+        if (key !== 'last_attributed_touch_data_custom_fields' &&
+            key.startsWith('last_attributed_touch_data')) {
+            lastAttributedTouchData[key] = this[key]
+        }
+    }
+    // console.debug(`Adding custom fields: ${this.last_attributed_touch_data_custom_fields}`)
+    // if (typeof this.last_attributed_touch_data_custom_fields === 'object') {
+    //     for (const key of Object.keys(this.last_attributed_touch_data_custom_fields)) {
+    //         lastAttributedTouchData[key] = this.last_attributed_touch_data_custom_fields[key]
+    //     }
+    // }
     return JSON.stringify(lastAttributedTouchData)
-  }
+}
+    
 
 const AnyDeviceId = function (): string | undefined {
     if (typeof this === 'string') { //hack for now, need to understand why the device id is being called twice here

@@ -8,6 +8,7 @@ import { AmplitudeTransformer } from '../transformers/AmplitudeTransformer'
 import AmplitudeEvent from '../model/AmplitudeEvent'
 import { getSecret, Secret } from '../utils/Secrets'
 import { shouldUpload } from './UploaderFunctions'
+import { chunk } from '../utils/ArrayUtils'
 
 export async function uploadToAmplitude(events: BranchEvent[], filename: string): Promise<UploadResult> {
   try {
@@ -61,15 +62,21 @@ export async function uploadToAmplitude(events: BranchEvent[], filename: string)
     } else if (errors.length > 0) {
       status = UploadResultStatus.ContainsErrors
     }
-    try {
-      if (transformedEvents.length === 0){
-        throw new Error('No events available to upload to Amplitude')
-      }
-      await sendData(transformedEvents)
-    } catch(error) {
-      console.error(`Error uploading events to Amplitude: ${error.message}`)
-      status = UploadResultStatus.Failed
+    if (transformedEvents.length === 0) {
+      throw new Error('No events available to upload to Amplitude')
     }
+    var eventsUploaded = 0
+    const chunks = chunk<AmplitudeEvent>(transformedEvents, 2000)
+    chunks.forEach(async (e) => {
+      try {
+        await sendData(e)
+        eventsUploaded += e.length
+        console.info(`Events uploaded successfully to Amplitude: ${eventsUploaded}`)
+      } catch (error) {
+        console.error(`Error uploading events to Amplitude: ${error.message}`)
+        status = UploadResultStatus.ContainsErrors
+      }
+    })
     return {
       totalEvents: events.length,
       service: ExportService.Amplitude,
@@ -93,7 +100,7 @@ export async function uploadToAmplitude(events: BranchEvent[], filename: string)
         "api_key": await getSecret(Secret.AmplitudeApiKey),
         "events": events
       }
-      console.debug('Uploading events to Amplitude...')
+      console.debug(`Uploading ${events.length} events to Amplitude...`)
       const response = await api.post('/batch', body)
       console.debug(`Amplitude upload completed with response: ${response.status}`)
       return response

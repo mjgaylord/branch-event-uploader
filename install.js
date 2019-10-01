@@ -79,7 +79,7 @@ module.exports.createBucket = async function (s3, bucket) {
 }
 
 module.exports.copyTemplates = async function (s3, bucket) {
-  const templatesFolder = path.join(__dirname, 'templates')
+  const templatesFolder = path.join(__dirname, 'src/templates')
   const files = await this.readDir(templatesFolder)
   if (!files || files.length === 0) {
     console.log(`${templatesFolder} is empty or does not exist.`)

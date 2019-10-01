@@ -1,5 +1,6 @@
 import { APIGatewayProxyHandler, Context, Callback } from 'aws-lambda'
 import 'source-map-support/register'
+// @ts-ignore
 import dotenv from 'dotenv'
 import { Response, File } from '../model/Models'
 import { Database } from '../database/Database'

@@ -67,21 +67,21 @@ provider:
 
 functions:
   start:
-    handler: handlers/StartExports.run
+    handler: src/handlers/StartExports.run
     timeout: 120
           
   download:
-    handler: handlers/CheckDownloads.run
+    handler: src/handlers/CheckDownloads.run
     timeout: 120
     environment:
       FUNCTION_PREFIX: ${self:service}-${opt:stage, self:provider.stage}
       EXPORTS_BUCKET: ${self:custom.s3Buckets.BUCKET_NAME}
 
   copy:
-    handler: handlers/CopyFile.run
+    handler: src/handlers/CopyFile.run
 
   status:
-    handler: handlers/CheckStatus.run
+    handler: src/handlers/CheckStatus.run
     timeout: 30
     events:
       - http:
@@ -89,7 +89,7 @@ functions:
           path: status
 
   transform:
-    handler: handlers/Transform.run
+    handler: src/handlers/Transform.run
     timeout: 120
     environment:
       FUNCTION_PREFIX: ${self:service}-${opt:stage, self:provider.stage}
@@ -100,7 +100,7 @@ functions:
         existing: true
   
   report:
-    handler: handlers/JobReport.run
+    handler: src/handlers/JobReport.run
     timeout: 120
 
   # testTransform:

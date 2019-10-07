@@ -2,6 +2,7 @@ export default interface BranchEvent {
     id: number,
     name: string,
     timestamp: number,
+    timestamp_iso: string,
     origin: string,
     last_attributed_touch_type: string,
     last_attributed_touch_timestamp: string,
@@ -126,19 +127,19 @@ export default interface BranchEvent {
     last_cta_view_data_plus_touch_id: string,
     user_data_installer_package_name: string,
     user_data_cpu_type: string,
-    user_data_screen_width: null,
-    user_data_screen_height: null,
+    user_data_screen_width?: number,
+    user_data_screen_height?: number,
     user_data_build: string,
     user_data_internet_connection_type: string,
     hash_version: string,
 
     // Functions - each of these need to be defined and enabled below
-    timestampMillisFunction: Function,
-    joinedTagsFunction: Function,
-    lowerCasedFunction: Function,
-    touchDataFunction: Function,
-    deviceIdFunction: Function,
-    userIdFunction: Function
+    timestampMillisFunction?: Function,
+    joinedTagsFunction?: Function,
+    lowerCasedFunction?: Function,
+    touchDataFunction?: Function,
+    deviceIdFunction?: Function,
+    userIdFunction?: Function
 }
 
 const TimestampMillis = function (): number {
@@ -163,42 +164,6 @@ const LowerCased = function (): Function {
     }
 }
 
-// const TouchData = function (): string {
-//     var lastAttributedTouchData = {}
-//     for (const key of Object.keys(this)) {
-//         if (key !== 'last_attributed_touch_data_custom_fields' &&
-//             key.startsWith('last_attributed_touch_data')) {
-//             lastAttributedTouchData[key] = this[key]
-//         }
-//     }
-//     console.debug(`Adding custom fields: ${this.last_attributed_touch_data_custom_fields}`)
-//     if (typeof this.last_attributed_touch_data_custom_fields === 'object') {
-//         for (const key of Object.keys(this.last_attributed_touch_data_custom_fields)) {
-//             lastAttributedTouchData[key] = this.last_attributed_touch_data_custom_fields[key]
-//         }
-//     }
-//     return JSON.stringify(lastAttributedTouchData)
-// }
-
-// const TouchData = () => {
-//     var lastAttributedTouchData = {}
-//     const last_attributed_keys = Object.keys(this).filter(k => k.startsWith('last_attributed_touch_data'))
-//     last_attributed_keys.forEach(key => {
-//       const object = this[key]
-//       console.debug(`Object type is: ${typeof object} for key: ${key}`)
-//       if (typeof object === 'string' 
-//         || typeof object === 'number' 
-//         || typeof object === 'boolean'
-//         || Array.isArray(object)) {
-//             lastAttributedTouchData[key] = object
-//       }
-//     //   if (typeof object === 'object') {
-//     //     lastAttributedTouchData = {...object, ...lastAttributedTouchData}
-//     //   }
-//     })
-//     return JSON.stringify(lastAttributedTouchData)
-//   }
-
 const TouchData = function (): string {
     var lastAttributedTouchData = {}
     for (const key of Object.keys(this)) {
@@ -207,15 +172,15 @@ const TouchData = function (): string {
             lastAttributedTouchData[key] = this[key]
         }
     }
-    // console.debug(`Adding custom fields: ${this.last_attributed_touch_data_custom_fields}`)
-    // if (typeof this.last_attributed_touch_data_custom_fields === 'object') {
-    //     for (const key of Object.keys(this.last_attributed_touch_data_custom_fields)) {
-    //         lastAttributedTouchData[key] = this.last_attributed_touch_data_custom_fields[key]
-    //     }
-    // }
+    try {
+        const deserializedCustomFields = JSON.parse(this.last_attributed_touch_data_custom_fields)
+        lastAttributedTouchData = {...deserializedCustomFields, ...lastAttributedTouchData}
+    } catch (error) {
+        console.warn(`Errors deserializing custom fields: ${this.last_attributed_touch_data_custom_fields}\nerror: ${error}`)
+    }
+    
     return JSON.stringify(lastAttributedTouchData)
 }
-    
 
 const AnyDeviceId = function (): string | undefined {
     if (typeof this === 'string') { //hack for now, need to understand why the device id is being called twice here
@@ -229,8 +194,13 @@ const AnyUserId = function (): string | undefined {
     if (typeof this === 'string') {
         return this
     }
-    if (this.custom_data && this.custom_data.$amplitude_user_id) {
-        return this.custom_data.$amplitude_user_id
+    try {
+        const { $amplitude_user_id } = JSON.parse(this.custom_data)
+        if (!!$amplitude_user_id) { // TODO: This is for amplitude but we need to make this configurable
+            return $amplitude_user_id
+        }
+    } catch (error) {
+        console.debug(`Error parsing custom_data on event: ${this.custom_data} error: ${error}`)
     }
     return this.user_data_developer_identity
 }

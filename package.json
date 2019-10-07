@@ -4,10 +4,10 @@
   "description": "Serverless webpack example using Typescript",
   "main": "handler.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --config ./jest.config.js",
     "start": "./node_modules/.bin/sls offline start -r ap-southeast-1 --noTimeout",
     "deploy": "sls deploy --verbose",
-    "update": "npm run install && npm run deploy",
+    "update": "npm run install && npm test && npm run deploy",
     "install": "node -e 'require(\"./install\").install()'",
     "debug": "export SLS_DEBUG=* && node --inspect-brk=9229 ./node_modules/.bin/serverless offline start -r ap-southeast-1 --noTimeout dev",
     "setup": "./node_modules/.bin/sls config credentials --provider aws --key KEY --secret SECRET",

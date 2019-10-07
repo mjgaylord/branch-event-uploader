@@ -53,9 +53,9 @@ WebSessionStart
 WebToAppAutoRedirect
 ```
 
-# Deployment
+# Deployment & Updating
 
-Run `npm run deploy`
+Run `npm run update`
 
 # Post deployment setup
 
@@ -68,3 +68,4 @@ Cloudwatch events also need to be setup to schedule event triggers on `start` an
 - Add support for marking uploads as complete in DynamoDB
 - Add manual retry capability
 - Add support for Mixpanel
+- Improve test coverage

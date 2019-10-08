@@ -56,9 +56,6 @@ export async function transformAndUpload(file: string, filename: string): Promis
     return uploadResults
   }
   console.info(`CSV converted to JSON uploading ${events.length} events to: ${services.join(', ')}`)
-  for (let i = 0; i < 10; i++) {
-    console.debug(`Sample event: ${JSON.stringify(events[i])}`)
-  }
   return await Promise.all(services.map(async service => {
     console.debug(`Uploading to ${service}...`)
     switch (service) {

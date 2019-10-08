@@ -1,10 +1,11 @@
 import { testEvent } from './TestData'
 import { enableFunctions } from '../src/model/BranchEvent'
+import { ExportService } from '../src/model/Models'
 
 describe('Transform functions', () => {
   const event = testEvent
   beforeEach(() => {
-    enableFunctions(event)
+    enableFunctions(event, ExportService.Amplitude)
   })
 
   it('Converts timestamp to millis', () => {
@@ -20,7 +21,6 @@ describe('Transform functions', () => {
       last_attributed_touch_data_tilde_channel: 'Some Channel',
       last_attributed_touch_data_tilde_feature: 'journeys',
       last_attributed_touch_data_tilde_stage: 'Some Stage',
-      last_attributed_touch_data_tilde_tags: ['Bottom Banner'],
       last_attributed_touch_data_tilde_journey_name: 'Top vs Bottom Banner A/B Test',
       last_attributed_touch_data_tilde_journey_id: '5bfc84012503fecd2e596f25',
       last_attributed_touch_data_tilde_view_name: 'Bottom Banner',
@@ -41,10 +41,15 @@ describe('Transform functions', () => {
     })
   })
 
-  it('Extracts any user id', () => {
+  it('Extracts Amplitude user id', () => {
     const result = event.userIdFunction()
-    console.debug(`result: ${result}`)
-    expect(result).toEqual('318')
+    expect(result).toEqual('amplitude_identity')
+  })
+
+  it('Extracts developer identity', () => {
+    enableFunctions(event, ExportService.None)
+    const result = event.userIdFunction()
+    expect(result).toEqual('someidentity@identity.com')
   })
 
   it('Extracts any device id', () => {
@@ -56,5 +61,23 @@ describe('Transform functions', () => {
     event.user_data_idfa = "2f3ff5df-fd74-0bfa-1286-70755d580118"
     result = event.deviceIdFunction()
     expect(event.user_data_idfa).toEqual(result)
+  })
+
+  it('Returns a joined string off of a tags array', () => {
+    const expectedResult = "Bottom Banner,An awesome banner,Somewhere on this webpage"
+    const result = event.joinedTagsFunction()
+    expect(result).toEqual(expectedResult)
+  })
+
+  it('Returns a joined string off of a features array', () => {
+    const expectedResult = "Homepage Feature,Another feature,One more feature"
+    const result = event.joinedFeaturesFunction()
+    expect(result).toEqual(expectedResult)
+  })
+
+  it('Returns Mixpanel touch data', () => {
+    enableFunctions(event, ExportService.Mixpanel)
+    const result = event.touchDataFunction()
+    expect(result).toBeTruthy()
   })
 })

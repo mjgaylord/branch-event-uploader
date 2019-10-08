@@ -1,6 +1,8 @@
 import BranchEvent from '../src/model/BranchEvent'
+import { ExportService } from '../src/model/Models'
 
 export const testEvent: BranchEvent = {
+  exportService: ExportService.None,
   "id": 685102994546689427,
   "name": "PURCHASE",
   "timestamp": 1564579508998,
@@ -15,7 +17,7 @@ export const testEvent: BranchEvent = {
   "last_attributed_touch_data_tilde_channel": "Some Channel",
   "last_attributed_touch_data_tilde_feature": "journeys",
   "last_attributed_touch_data_tilde_stage": "Some Stage",
-  "last_attributed_touch_data_tilde_tags": ["Bottom Banner"],
+  "last_attributed_touch_data_tilde_tags": "[\"Bottom Banner\",\"An awesome banner\",\"Somewhere on this webpage\"]",
   "last_attributed_touch_data_tilde_advertising_partner_name": "",
   "last_attributed_touch_data_tilde_secondary_publisher": "",
   "last_attributed_touch_data_tilde_creative_name": "",
@@ -37,7 +39,7 @@ export const testEvent: BranchEvent = {
   "last_attributed_touch_data_tilde_view_name": "Bottom Banner",
   "last_attributed_touch_data_tilde_view_id": "595747715178848265",
   "last_attributed_touch_data_plus_current_feature": "",
-  "last_attributed_touch_data_plus_via_features": [],
+  "last_attributed_touch_data_plus_via_features": "[\"Homepage Feature\", \"Another feature\", \"One more feature\"]",
   "last_attributed_touch_data_dollar_3p": "",
   "last_attributed_touch_data_plus_web_format": "",
   "last_attributed_touch_data_tilde_customer_campaign": "", 
@@ -99,7 +101,7 @@ export const testEvent: BranchEvent = {
   "user_data_limit_ad_tracking": "false",
   "user_data_user_agent": "Mozilla/5.0 (Linux; Android 8.0.0; Pixel Build/OPR3.170623.008) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.84 Mobile Safari/537.36",
   "user_data_ip": "54.183.153.61",
-  "user_data_developer_identity": "",
+  "user_data_developer_identity": "someidentity@identity.com",
   "user_data_language": "EN",
   "user_data_brand": "Google",
   "di_match_click_token": 100,
@@ -115,7 +117,7 @@ export const testEvent: BranchEvent = {
   "event_data_search_query": "",
   "event_data_description": "",
   "event_timestamp": 1564579508998,
-  "custom_data": "{\"$amplitude_user_id\":\"318\"}",
+  "custom_data": "{\"$amplitude_user_id\":\"amplitude_identity\"}",
   "last_attributed_touch_data_tilde_keyword": "",
   "user_data_cross_platform_id": "",
   "user_data_past_cross_platform_ids": "[]",

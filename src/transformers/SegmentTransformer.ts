@@ -2,9 +2,10 @@ import { Transformer, initMustache } from "./Transformer";
 import SegmentEvent from "../model/SegmentEvent";
 import BranchEvent, { enableFunctions } from "../model/BranchEvent";
 import * as Mustache from 'mustache'
+import { ExportService } from '../model/Models';
 
 export class SegmentTransformer implements Transformer<SegmentEvent> {
-  template = "SEGMENTEVENT"
+  template: string
   partials = {}
   constructor(template: string, partials: {}) {
     this.template = template
@@ -12,7 +13,7 @@ export class SegmentTransformer implements Transformer<SegmentEvent> {
     initMustache(this.template)
   }
   transform = (event: BranchEvent): SegmentEvent | undefined => {
-    enableFunctions(event)
+    enableFunctions(event, ExportService.Segment)
     const { template } = this
     const rendered = Mustache.render(template, event, this.loadPartial)
     if (!rendered || rendered.length === 0) {

@@ -1,4 +1,7 @@
+import { ExportService } from './Models'
+
 export default interface BranchEvent {
+    exportService: ExportService
     id: number,
     name: string,
     timestamp: number,
@@ -13,7 +16,7 @@ export default interface BranchEvent {
     last_attributed_touch_data_tilde_channel: string,
     last_attributed_touch_data_tilde_feature: string,
     last_attributed_touch_data_tilde_stage: string,
-    last_attributed_touch_data_tilde_tags: string[],
+    last_attributed_touch_data_tilde_tags: string,
     last_attributed_touch_data_tilde_advertising_partner_name: string,
     last_attributed_touch_data_tilde_secondary_publisher: string,
     last_attributed_touch_data_tilde_creative_name: string,
@@ -35,7 +38,7 @@ export default interface BranchEvent {
     last_attributed_touch_data_tilde_view_name: string,
     last_attributed_touch_data_tilde_view_id: string,
     last_attributed_touch_data_plus_current_feature: string,
-    last_attributed_touch_data_plus_via_features: [],
+    last_attributed_touch_data_plus_via_features: string,
     last_attributed_touch_data_dollar_3p: string,
     last_attributed_touch_data_plus_web_format: string,
     last_attributed_touch_data_custom_fields: any,
@@ -139,7 +142,8 @@ export default interface BranchEvent {
     lowerCasedFunction?: Function,
     touchDataFunction?: Function,
     deviceIdFunction?: Function,
-    userIdFunction?: Function
+    userIdFunction?: Function,
+    joinedFeaturesFunction?: Function,
 }
 
 const TimestampMillis = function (): number {
@@ -158,6 +162,15 @@ const JoinedTags = function (): string {
     return tags.join(',')
 }
 
+const JoinedFeatures = function (): string {
+    const featuresString: string = this.last_attributed_touch_data_plus_via_features
+    if (featuresString.length === 0) {
+        return ''
+    }
+    const features = JSON.parse(featuresString)
+    return features.join(',')
+}
+
 const LowerCased = function (): Function {
     return (text: string, render: Function) => {
         return render(text).toLowerCase()
@@ -165,10 +178,16 @@ const LowerCased = function (): Function {
 }
 
 const TouchData = function (): string {
+    const exclusions = this.exportService === ExportService.Mixpanel ? 
+    ["last_attributed_touch_data_custom_fields", 
+    "last_attributed_touch_data_plus_via_features", 
+    "last_attributed_touch_data_tilde_tags"] : []
+
     var lastAttributedTouchData = {}
     for (const key of Object.keys(this)) {
         if (key !== 'last_attributed_touch_data_custom_fields' &&
-            key.startsWith('last_attributed_touch_data')) {
+            key.startsWith('last_attributed_touch_data') &&
+            exclusions.indexOf(key) < 0 ) {
             lastAttributedTouchData[key] = this[key]
         }
     }
@@ -191,14 +210,17 @@ const AnyDeviceId = function (): string | undefined {
     return device
 }
 
-const AnyUserId = function (): string | undefined {
+const UserId = function(): string | undefined {
     if (typeof this === 'string') {
         return this
     }
     try {
-        const { $amplitude_user_id } = JSON.parse(this.custom_data)
-        if (!!$amplitude_user_id) { // TODO: This is for amplitude but we need to make this configurable
-            return $amplitude_user_id
+        const parsed = JSON.parse(this.custom_data)
+        switch (this.exportService) {
+            case ExportService.Mixpanel:
+                return parsed.$mixpanel_distinct_id || this.user_data_developer_identity
+            case ExportService.Amplitude:
+                return parsed.$amplitude_user_id || this.user_data_developer_identity
         }
     } catch (error) {
         console.debug(`Error parsing custom_data on event: ${this.custom_data} error: ${error}`)
@@ -206,11 +228,13 @@ const AnyUserId = function (): string | undefined {
     return this.user_data_developer_identity
 }
 
-export function enableFunctions(event: BranchEvent) {
+export function enableFunctions(event: BranchEvent, service: ExportService) {
+    event.exportService = service
     event.timestampMillisFunction = TimestampMillis
     event.joinedTagsFunction = JoinedTags
     event.lowerCasedFunction = LowerCased
-    event.touchDataFunction = TouchData
     event.deviceIdFunction = AnyDeviceId
-    event.userIdFunction = AnyUserId
+    event.joinedFeaturesFunction = JoinedFeatures
+    event.touchDataFunction = TouchData
+    event.userIdFunction = UserId
 }

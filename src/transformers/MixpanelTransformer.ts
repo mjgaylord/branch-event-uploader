@@ -1,10 +1,10 @@
 import { Transformer, initMustache } from "./Transformer"
 import BranchEvent, { enableFunctions } from "../model/BranchEvent"
 import * as Mustache from 'mustache'
-import AmplitudeEvent from "../model/AmplitudeEvent"
 import { ExportService } from '../model/Models'
+import MixpanelEvent from '../model/MixpanelEvent'
 
-export class AmplitudeTransformer implements Transformer<AmplitudeEvent> {
+export class MixpanelTransformer implements Transformer<MixpanelEvent> {
   template: string
   partials = {}
   constructor(template: string, partials: {}) {
@@ -12,8 +12,8 @@ export class AmplitudeTransformer implements Transformer<AmplitudeEvent> {
     this.partials = partials
     initMustache(this.template)
   }
-  transform = (event: BranchEvent): AmplitudeEvent | undefined => {
-    enableFunctions(event, ExportService.Amplitude)
+  transform = (event: BranchEvent): MixpanelEvent | undefined => {
+    enableFunctions(event, ExportService.Mixpanel)
     const { template } = this
     const rendered = Mustache.render(template, event, this.loadPartial)
     if (!rendered || rendered.length === 0) {
@@ -37,7 +37,7 @@ export class AmplitudeTransformer implements Transformer<AmplitudeEvent> {
       throw error
     }
   }
-  parse = (event: string): AmplitudeEvent => {
+  parse = (event: string): MixpanelEvent => {
     return JSON.parse(event, (key, value) => {
       if (key === 'timestamp' && !!value) {
         return new Date(value)

@@ -1,0 +1,9 @@
+{
+	"ip":"{{user_data_ip}}",
+	"time":{{timestamp}},
+	"distinct_id":"{{userIdFunction}}",
+	"os":"{{user_data_os}}",
+	"~tags":"{{joinedTagsFunction}}",
+	"+via_features":"{{joinedFeaturesFunction}}",
+  {{mixpanelTouchDataFunction}}
+}

@@ -18,7 +18,16 @@ module.exports.install = async function () {
   }
 
   //create AWS Secrets Manager entries for the keys
-  const secretKeys = ["awsAccessKeyId", "awsSecretKey", "branchKey", "branchSecret", "amplitudeKey", "segmentKey"]
+  const secretKeys = [
+    "awsAccessKeyId", 
+    "awsSecretKey", 
+    "branchKey", 
+    "branchSecret", 
+    "amplitudeKey", 
+    "segmentKey", 
+    "mixpanelToken", 
+    "mixpanelAPIKey"
+  ]
   let secrets = {}
   Object.keys(result)
     .filter(k => secretKeys.find(p => p === k) && result[k].length > 0)
@@ -195,9 +204,10 @@ module.exports.saveConfig = async function (config) {
 
 module.exports.servicesFromSecrets = function (secrets) {
   return Object.keys(secrets).filter(k => {
-    return k === 'amplitudeKey' || k === 'segmentKey'
+    return k === 'amplitudeKey' || k === 'segmentKey' || k === 'mixpanelToken'
   }).map(k => {
     if (k === 'amplitudeKey') return "Amplitude"
     if (k === 'segmentKey') return "Segment"
+    if (k === 'mixpanelToken') return "Mixpanel"
   }).join(",")
 }

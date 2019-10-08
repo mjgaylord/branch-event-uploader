@@ -185,10 +185,11 @@ const TouchData = function (): string {
 
     var lastAttributedTouchData = {}
     for (const key of Object.keys(this)) {
+        const value = this[key]
         if (key !== 'last_attributed_touch_data_custom_fields' &&
             key.startsWith('last_attributed_touch_data') &&
-            exclusions.indexOf(key) < 0 ) {
-            lastAttributedTouchData[key] = this[key]
+            exclusions.indexOf(key) < 0 && value.length > 0) {
+            lastAttributedTouchData[key] = value
         }
     }
     try {

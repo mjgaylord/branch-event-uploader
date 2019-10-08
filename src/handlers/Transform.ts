@@ -4,8 +4,9 @@ import { parse } from 'papaparse'
 import BranchEvent from '../model/BranchEvent'
 import { getFile } from '../utils/s3'
 import { configuredServices, lambda } from '../utils/Config'
-import { uploadToSegment } from '../event-uploaders/SegmentUploader';
-import { uploadToAmplitude } from '../event-uploaders/AmplitudeUploader';
+import { uploadToSegment } from '../event-uploaders/SegmentUploader'
+import { uploadToAmplitude } from '../event-uploaders/AmplitudeUploader'
+import { uploadToMixpanel } from '../event-uploaders/MixpanelUploader'
 
 export const run = async (event: S3CreateEvent, _context: Context, _callback: Callback): Promise<any> => {
   console.info(`New file arrived: ${JSON.stringify(event.Records[0])}`)
@@ -64,7 +65,7 @@ export async function transformAndUpload(file: string, filename: string): Promis
       case ExportService.Amplitude:
         return await uploadToAmplitude(events, filename)
       case ExportService.Mixpanel:
-        throw new Error(`Service not yet implemented: ${service}`)
+        return await uploadToMixpanel(events, filename)
     }
   }))
 }

@@ -1,3 +1,7 @@
 export default interface MixpanelEvent {
-  distinct_id: string
+  event: string,
+  properties: {
+    time: Date,
+    distinct_id: string
+  }
 }

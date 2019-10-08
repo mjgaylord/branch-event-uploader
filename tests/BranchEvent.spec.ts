@@ -31,7 +31,7 @@ describe('Transform functions', () => {
       $og_description:'QA Tests for Commerce v2 Events',
       $og_video:'http://qaauto.branch.io/video',
       $one_time_use:false,
-      $canonical_url:'http://qaauto.branch.io/qa/test_cases/journey_banner20.html?branch_key=key_live_kkGffiMKsmMX4B5umosCzlkduueBt6qZ',
+      $canonical_url:'http://qaauto.branch.io/qa/test_cases/journey_banner20.html',
       $uri_redirect_mode:1,
       $og_image_url:'http://branch.io/img/logo_icon_black.png'
     }

@@ -1,9 +1,12 @@
 {
-	"ip":"{{user_data_ip}}",
-	"time":{{timestamp}},
-	"distinct_id":"{{userIdFunction}}",
-	"os":"{{user_data_os}}",
-	"~tags":"{{joinedTagsFunction}}",
-	"+via_features":"{{joinedFeaturesFunction}}",
-  {{mixpanelTouchDataFunction}}
+  "event": "Branch {{name}}",
+  "properties": {
+    "ip":"{{user_data_ip}}",
+    "time":{{timestampMillisFunction}},
+    "distinct_id":"{{userIdFunction}}",
+    "os":"{{user_data_os}}",
+    "~tags":"{{joinedTagsFunction}}",
+    "+via_features":"{{joinedFeaturesFunction}}",
+    {{> lastAttributedTouchData}}
+  }
 }

@@ -4,8 +4,9 @@ export enum Secret {
   SegmentWriteKey = "segmentKey",
   AmplitudeApiKey = "amplitudeKey",
   BranchKey = "branchKey",
-  BranchSecret = "branchSecret"
-  // "awsAccessKeyId", "awsSecretKey", "branchKey", "branchSecret", "amplitudeKey", "segmentKey"
+  BranchSecret = "branchSecret",
+  MixpanelToken = "mixpanelToken",
+  MixpanelAPIKey = "mixpanelAPIKey"
 }
 
 export async function getSecret(secret: Secret): Promise<string> {

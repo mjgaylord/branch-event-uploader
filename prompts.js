@@ -79,6 +79,19 @@ module.exports.prompts = function () {
       amplitudeExcludedTopics: {
         description: `Comma separated list of events to exclude sending to Amplitude (Valid options: ${topics.join(', ')})`,
       },
+      mixpanelToken: {
+        description: 'Provide your Mixpanel Project Token: (Enter nothing to disable Mixpanel upload)',
+        pattern: /^[a-zA-Z0-9]+$/,
+        message: 'Invalid Mixpanel Token',
+      },
+      mixpanelAPIKey: {
+        description: 'Provide your Mixpanel API key:',
+        pattern: /^[a-zA-Z0-9]+$/,
+        message: 'Invalid Mixpanel API key',
+      },
+      mixpanelExcludedTopics: {
+        description: `Comma separated list of events to exclude sending to Mixpanel (Valid options: ${topics.join(', ')})`,
+      }
     }
   }
 }

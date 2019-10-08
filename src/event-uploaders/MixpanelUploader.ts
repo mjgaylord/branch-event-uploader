@@ -2,15 +2,16 @@ import BranchEvent from '../model/BranchEvent'
 import { UploadResult, FailedEvent, UploadResultStatus, ExportService } from '../model/Models'
 import { getFile, loadTemplates } from '../utils/s3'
 import { templatesBucket } from '../utils/Config'
-import { dateInFilename, hasData } from '../utils/StringUtils'
+import { dateInFilename } from '../utils/StringUtils'
 import { shouldUpload } from './UploaderFunctions'
-import { chunk } from '../utils/ArrayUtils'
 import MixpanelEvent from '../model/MixpanelEvent'
 import { MixpanelTransformer } from '../transformers/MixpanelTransformer'
+import * as Mixpanel from 'mixpanel'
+import { Secret, getSecret } from '../utils/Secrets'
 
-export async function uploadToAmplitude(events: BranchEvent[], filename: string): Promise<UploadResult> {
+export async function uploadToMixpanel(events: BranchEvent[], filename: string): Promise<UploadResult> {
   try {
-    const excludedConfig = process.env.AMPLITUDE_EXCLUDED_TOPICS
+    const excludedConfig = process.env.MIXPANEL_EXCLUDED_TOPICS
     if (!shouldUpload(filename, excludedConfig)) {
       const message = `File - ${filename} marked as excluded, skipping...`
       console.info(message)
@@ -35,6 +36,7 @@ export async function uploadToAmplitude(events: BranchEvent[], filename: string)
     const transformer = new MixpanelTransformer(template, partials)
     var errors = new Array<FailedEvent>()
     var transformedEvents = new Array<MixpanelEvent>()
+    console.debug(`Branch events: ${JSON.stringify(events)}`)
     for (let i = 0; i < events.length; i++) {
       const event = events[i]
       try {
@@ -42,13 +44,7 @@ export async function uploadToAmplitude(events: BranchEvent[], filename: string)
         if (!mixpanelEvent) {
           throw new Error(`Transform failed for event`)
         }
-        if (hasData(mixpanelEvent.distinct_id)) {
-          transformedEvents.push(mixpanelEvent)
-        } else {
-          const errorMessage = `Skipped event due to missing deviceId or userId`
-          console.debug(errorMessage)
-          errors.push({ event, reason:  errorMessage})
-        }
+        transformedEvents.push(mixpanelEvent)
       } catch (error) {
         console.error(`Error transforming event: ${JSON.stringify(error)}`)
         errors.push({ event, reason: JSON.stringify(error) })
@@ -61,23 +57,19 @@ export async function uploadToAmplitude(events: BranchEvent[], filename: string)
       status = UploadResultStatus.ContainsErrors
     }
     if (transformedEvents.length === 0) {
-      throw new Error('No events available to upload to Amplitude')
+      throw new Error('No events available to upload to Mixpanel')
     }
     var eventsUploaded = 0
-    const chunks = chunk<MixpanelEvent>(transformedEvents, 2000)
-    chunks.forEach(async (e) => {
-      try {
-        await sendData(e)
-        eventsUploaded += e.length
-        console.info(`Events uploaded successfully to Amplitude: ${eventsUploaded}`)
-      } catch (error) {
-        console.error(`Error uploading events to Amplitude: ${error.message}`)
-        status = UploadResultStatus.ContainsErrors
-      }
-    })
+    try {
+      await sendData(transformedEvents)
+      console.info(`Events uploaded successfully to Mixpanel: ${eventsUploaded}`)
+    } catch (error) {
+      console.error(`Error uploading events to Mixpanel: ${error.message}`)
+      status = UploadResultStatus.ContainsErrors
+    }
     return {
       totalEvents: events.length,
-      service: ExportService.Amplitude,
+      service: ExportService.Mixpanel,
       dateOfFile: dateInFilename(filename),
       file: filename,
       errors,
@@ -85,7 +77,21 @@ export async function uploadToAmplitude(events: BranchEvent[], filename: string)
     }
   }
 
-  async function sendData(events: MixpanelEvent[]): Promise<any> {
-    
+  async function sendData(events: MixpanelEvent[]): Promise<void> {
+    const token = await getSecret(Secret.MixpanelToken)
+    const apiKey = await getSecret(Secret.MixpanelAPIKey)
+    const mixpanel = Mixpanel.init(token, {
+      key: apiKey,
+      protocol: 'https'
+    })
+    return new Promise((resolve, reject) => {
+      mixpanel.import_batch(events, (errors) => {
+        if (!!errors) {
+          reject(errors)
+          return
+        }
+        resolve()
+      })
+    })
   }
 }

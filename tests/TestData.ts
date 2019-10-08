@@ -47,7 +47,7 @@ export const testEvent: BranchEvent = {
   "last_attributed_touch_data_tilde_agency_id": "", 
   "last_attributed_touch_data_plus_touch_id": "", 
 
-  "last_attributed_touch_data_custom_fields": "{\"$og_title\":\"Journeys Commerce Events\",\"+url\":\"https:\\/\\/branch-demo.app.link\\/09wURzIDbW\",\"~creation_source\":5,\"$og_description\":\"QA Tests for Commerce v2 Events\",\"$og_video\":\"http:\\/\\/qaauto.branch.io\\/video\",\"$one_time_use\":false,\"$canonical_url\":\"http:\\/\\/qaauto.branch.io\\/qa\\/test_cases\\/journey_banner20.html?branch_key=key_live_kkGffiMKsmMX4B5umosCzlkduueBt6qZ\",\"$uri_redirect_mode\":1,\"$og_image_url\":\"http:\\/\\/branch.io\\/img\\/logo_icon_black.png\"}",
+  "last_attributed_touch_data_custom_fields": "{\"$og_title\":\"Journeys Commerce Events\",\"+url\":\"https:\\/\\/branch-demo.app.link\\/09wURzIDbW\",\"~creation_source\":5,\"$og_description\":\"QA Tests for Commerce v2 Events\",\"$og_video\":\"http:\\/\\/qaauto.branch.io\\/video\",\"$one_time_use\":false,\"$canonical_url\":\"http:\\/\\/qaauto.branch.io\\/qa\\/test_cases\\/journey_banner20.html\",\"$uri_redirect_mode\":1,\"$og_image_url\":\"http:\\/\\/branch.io\\/img\\/logo_icon_black.png\"}",
 
   "days_from_last_attributed_touch_to_event": "0",
   "hours_from_last_attributed_touch_to_event": "",

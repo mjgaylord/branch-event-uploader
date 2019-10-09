@@ -173,12 +173,13 @@ const TouchData = function (): string {
         }
     }
     try {
-        const deserializedCustomFields = JSON.parse(this.last_attributed_touch_data_custom_fields)
-        lastAttributedTouchData = {...deserializedCustomFields, ...lastAttributedTouchData}
+        if (!!this.last_attributed_touch_data_custom_fields && this.last_attributed_touch_data_custom_fields.length > 0) {
+            const deserializedCustomFields = JSON.parse(this.last_attributed_touch_data_custom_fields)
+            lastAttributedTouchData = {...deserializedCustomFields, ...lastAttributedTouchData}
+        } 
     } catch (error) {
         console.warn(`Errors deserializing custom fields: ${this.last_attributed_touch_data_custom_fields}\nerror: ${error}`)
     }
-    
     return JSON.stringify(lastAttributedTouchData)
 }
 

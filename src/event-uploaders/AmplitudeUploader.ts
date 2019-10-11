@@ -57,12 +57,12 @@ export async function uploadToAmplitude(events: BranchEvent[], filename: string)
       }
     }
     var status = UploadResultStatus.Successful
-    if (errors.length === events.length) {
+    if (!!errors && errors.length === events.length) {
       status = UploadResultStatus.Failed
-    } else if (errors.length > 0) {
+    } else if (!!errors && errors.length > 0) {
       status = UploadResultStatus.ContainsErrors
     }
-    if (transformedEvents.length === 0) {
+    if (!transformedEvents || transformedEvents.length === 0) {
       throw new Error('No events available to upload to Amplitude')
     }
     var eventsUploaded = 0

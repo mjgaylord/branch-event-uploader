@@ -1,6 +1,8 @@
 import { testEvent } from './TestData'
 import { enableFunctions } from '../src/model/BranchEvent'
 import { ExportService } from '../src/model/Models'
+import { hasData } from '../src/utils/StringUtils'
+import AmplitudeEvent from '../src/model/AmplitudeEvent'
 
 describe('Transform functions', () => {
   const event = testEvent
@@ -79,5 +81,15 @@ describe('Transform functions', () => {
     enableFunctions(event, ExportService.Mixpanel)
     const result = event.touchDataFunction()
     expect(result).toBeTruthy()
+  })
+
+  it('Returns false if hasData is undefined', () => {
+    const values: AmplitudeEvent = {}
+    expect(hasData(values.device_id, values.user_id)).toEqual(false)
+  })
+
+  it('Returns true if hasData is defined', () => {
+    const values: AmplitudeEvent = {device_id: '123456789', user_id: '1234456788'}
+    expect(hasData(values.device_id, values.user_id)).toEqual(true)
   })
 })

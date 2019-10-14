@@ -27,8 +27,8 @@ export const run: APIGatewayProxyHandler = async (event: APIGatewayEvent, contex
 
   console.info(`File: ${key} written to bucket: ${destBucket}`)
   try {
-    const data = await getUncompressed(path)
-    await uploadToS3(data, destBucket, key, path)
+    await streamUncompressed(path, bucket, key)
+    // await uploadToS3(data, destBucket, key, path)
     await database.downloadCompleted(path)
     const result: Response = {
       statusCode: 200,
@@ -49,39 +49,25 @@ export const run: APIGatewayProxyHandler = async (event: APIGatewayEvent, contex
   }
 }
 
-function getUncompressed(path: string): Promise<string> {
+function streamUncompressed(path: string, bucket: string, key: string): Promise<string> {
   return new Promise<any>(async (resolve, reject) => {
-    https.get(path, response => {
+    https.get(path, async (response) => {
       const unzip = zlib.createGunzip()
-      const buffer = []
-      unzip.on('data', data => {
-        buffer.push(data.toString())
-      }).on('end', () => {
-        const uncompressed = buffer.join("")
-        console.log('Downloaded file successfully, writing to S3...')
-        resolve(uncompressed)
-      })
       response.pipe(unzip)
+      await uploadReadableStream(unzip, bucket, key, path)
+      resolve()
     }).on('error', error => {
       reject(error)
     })
   })
 }
 
-function uploadToS3(csv: string, bucket: string, key: string, path: string): Promise<boolean> {
-  return new Promise<any>((resolve, reject) => {
-    s3.upload({
-      Bucket: bucket,
-      Key: key,
-      Body: csv,
-      Metadata: { downloadPath: path }
-    }, async function (err, _data) {
-      if (!!err) {
-        console.error(`Error uploading: ${err}`)
-        reject(err)
-        throw err
-      }
-      resolve(true)
-    })
-  })
+async function uploadReadableStream(stream: NodeJS.ReadableStream, bucket: string, key: string, path: string) {
+  const params = {
+    Bucket: bucket, 
+    Key: key, 
+    Body: stream,
+    Metadata: { downloadPath: path}
+  }
+  return s3.upload(params).promise()
 }

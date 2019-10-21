@@ -1,32 +1,23 @@
 import { Context, Callback, S3CreateEvent } from 'aws-lambda'
-import { Response, UploadResult, ExportService } from '../model/Models'
-import { parse } from 'papaparse'
+import { StringStream } from 'scramjet'
+import { Response } from '../model/Models'
+import { getStream } from '../utils/s3'
+import { lambda } from '../utils/Config'
 import BranchEvent from '../model/BranchEvent'
-import { getFile } from '../utils/s3'
-import { configuredServices, lambda } from '../utils/Config'
-import { uploadToSegment } from '../event-uploaders/SegmentUploader'
-import { uploadToAmplitude } from '../event-uploaders/AmplitudeUploader'
-import { uploadToMixpanel } from '../event-uploaders/MixpanelUploader'
+import { parse } from 'papaparse'
+import { Database } from '../database/Database'
+
+const database = new Database()
 
 export const run = async (event: S3CreateEvent, _context: Context, _callback: Callback): Promise<any> => {
   console.info(`New file arrived: ${JSON.stringify(event.Records[0])}`)
   const bucket = event.Records[0].s3.bucket.name
-  const filename = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, " "))
+  const filename = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, ' '))
   try {
-    const file = await getFile(bucket, filename)
+    const stream = getStream(bucket, filename)
     console.debug(`Uploading results for: ${bucket}/${filename}`)
-    const uploadResults = await transformAndUpload(file, filename)
-    console.debug(`Upload completed.`)
-
-    const reported = await sendJobReport(uploadResults)
-    if (!!reported.error) {
-      const result: Response = {
-        statusCode: 500,
-        body: `Unable to notify report lambda due to: ${reported.error}`,
-        isBase64Encoded: false
-      }
-      return result
-    }
+    const uploadResults = await transformAndUpload(stream, filename)
+    console.debug(`Upload completed`)
     const result: Response = {
       statusCode: 200,
       body: `Upload results: ${JSON.stringify(uploadResults)}`,
@@ -34,64 +25,65 @@ export const run = async (event: S3CreateEvent, _context: Context, _callback: Ca
     }
     return result
   } catch (error) {
-    console.error(
-      'Unable to download ' + bucket + '/' + filename +
-      ' and upload events' +
-      ' due to an error: ' + error
-    )
+    console.error('Unable to download ' + bucket + '/' + filename + ' and upload events' + ' due to an error: ' + error)
     const failed: Response = {
       statusCode: 400,
-      body: error.message || "Unknown error occurred",
+      body: error.message || 'Unknown error occurred',
       isBase64Encoded: false
     }
     return failed
   }
 }
 
-export async function transformAndUpload(file: string, filename: string): Promise<Array<UploadResult>> {
-  const events = transformCSVtoJSON(file)
-  let uploadResults = Array<UploadResult>()
-  const services = configuredServices()
-  if (events.length === 0) {
-    console.warn(`Events empty, nothing to upload.`)
-    return uploadResults
-  }
-  console.info(`CSV converted to JSON uploading ${events.length} events to: ${services.join(', ')}`)
-  return await Promise.all(services.map(async service => {
-    console.debug(`Uploading to ${service}...`)
-    switch (service) {
-      case ExportService.Segment:
-        return await uploadToSegment(events, filename)
-      case ExportService.Amplitude:
-        return await uploadToAmplitude(events, filename)
-      case ExportService.Mixpanel:
-        return await uploadToMixpanel(events, filename)
-    }
-  }))
+export async function transformAndUpload(
+  stream: NodeJS.ReadableStream,
+  filename: string
+): Promise<{batchCount: number, eventCount: number}> {
+  let counter = 0
+  let sequence = 0
+  var header: string
+  await StringStream.from(stream, { maxParallel: 10 })
+    .lines('\n')
+    .batch(500)
+    .map(async function(chunks: Array<string>) {
+      var input = ''
+      if (!header) {
+        header = chunks[0]
+        input = chunks.join('\n')
+      } else {
+        input = header + '\n' + chunks.join('\n')
+      }
+      const events: BranchEvent[] = parse(input, {
+        delimiter: ',',
+        header: true,
+        skipEmptyLines: true
+      }).data
+      counter = counter + events.length
+      await uploadEvents(events, filename, sequence)
+      sequence++
+      // const results = await upload(events, filename)
+      return []
+    })
+    .run()
+    .catch(e => {
+      console.error(`Error uploading events: ${e.stack} counter: ${counter}`)
+      throw e
+    })
+  console.debug(`Total lines processed: ${counter} - Total sequences: ${sequence}`)
+  await database.updateFileMetrics(filename, sequence, counter)
+  return { batchCount: sequence, eventCount: counter}
 }
 
-function transformCSVtoJSON(csv: string): BranchEvent[] {
-  console.debug(`Transforming JSON`)
-  const result = parse(csv.trim(), {
-    delimiter: ',',
-    header: true
-  })
-  const { errors } = result
-  if (!!errors && errors.length > 0) {
-    console.warn(`Errors parsing data: ${JSON.stringify(errors)}`)
-    throw new Error(JSON.stringify(errors))
-  }
-  return result.data
-}
-
-async function sendJobReport(results: Array<UploadResult>) {
-  const functionName = `${process.env.FUNCTION_PREFIX}-report`
+export async function uploadEvents(events: BranchEvent[], filename: string, sequence: number) {
+  const functionName = `${process.env.FUNCTION_PREFIX}-upload`
   try {
-    await lambda.invoke({
-      LogType: 'Tail',
-      FunctionName: functionName,
-      Payload: JSON.stringify({ results }) // pass params
-    }).promise()
+    await lambda
+      .invoke({
+        LogType: 'None',
+        FunctionName: functionName,
+        Payload: JSON.stringify({ events, filename, sequence }) // pass params
+      })
+      .promise()
     return { success: true }
   } catch (error) {
     console.error(`Error executing lambda due to: ${error}`)

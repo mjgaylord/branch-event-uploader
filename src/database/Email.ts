@@ -1,4 +1,5 @@
 import * as AWS from 'aws-sdk'
+// @ts-ignore
 import dotenv from 'dotenv'
 import { SendEmailRequest } from 'aws-sdk/clients/ses'
 

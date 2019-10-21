@@ -12,6 +12,7 @@
   },
   "exclude": [
     "node_modules",
-    "**/*.spec.ts"
+    "**/*.spec.ts",
+    "**/tests/TestUtils.ts"
   ]
 }

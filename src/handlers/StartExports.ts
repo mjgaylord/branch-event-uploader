@@ -2,6 +2,7 @@ import { APIGatewayProxyHandler, Context, Callback } from 'aws-lambda'
 import axios from 'axios'
 import 'source-map-support/register'
 import * as moment from 'moment'
+// @ts-ignore
 import dotenv from 'dotenv'
 import { Response, File, ServiceType } from '../model/Models'
 import { Database } from '../database/Database'

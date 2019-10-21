@@ -13,7 +13,7 @@ describe('Mixpanel Transformer tests', () => {
     const { template, partials } = await loadTemplatesAndPartials(ExportService.Amplitude)
     transformer = new MixpanelTransformer(template, partials)
   })
-
+  
   it('Converts into mixpanel events', () => {
     const mixpanelEvent = transformer.transform(event)
     console.debug(`mixpanelEvent: ${JSON.stringify(mixpanelEvent)}`)
@@ -66,7 +66,7 @@ async function readFile(path: string): Promise<any> {
   })
 }
 
-async function loadTemplatesAndPartials(service: ExportService): Promise<{ template: string; partials: {} }> {
+export async function loadTemplatesAndPartials(service: ExportService): Promise<{ template: string; partials: {} }> {
   const templatePath = jest.requireActual('path').join(__dirname, pathForService(service), templateForService(service))
   console.debug(`Template path: ${templatePath}`)
   const template = await readFile(templatePath)

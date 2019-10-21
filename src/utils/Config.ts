@@ -11,14 +11,10 @@ export function serviceType(): ServiceType {
 }
 
 export const s3 = new AWS.S3({
-  // accessKeyId: process.env.ACCESS_KEY_ID,
-  // secretAccessKey: process.env.ACCESS_SECRET_KEY,
   region: process.env.REGION
 })
 
 export const lambda = new AWS.Lambda({
-  // accessKeyId: process.env.ACCESS_KEY_ID,
-  // secretAccessKey: process.env.ACCESS_SECRET_KEY,
   region: process.env.REGION
 });
 
@@ -29,7 +25,8 @@ export const secretsManager = new AWS.SecretsManager({
 export const templatesBucket = process.env.TEMPLATES_BUCKET
 export const reportReceivers = process.env.EMAIL_RECEIVERS
 export const reportSender = process.env.EMAIL_SENDER
-export const exportsTableName = process.env.DYNAMODB_TABLE
+export const exportsTableName = process.env.DOWNLOADS_TABLE
+export const batchUploadTableName = process.env.BATCH_UPLOAD_TABLE
 
 export function configuredServices(): Array<ExportService> {
   const services = process.env.EXPORT_SERVICES.split(',')

@@ -1,84 +1,116 @@
-import BranchEvent from "./BranchEvent";
+import BranchEvent from './BranchEvent'
 
 export interface File {
-    downloadPath: string,
-    pathAvailable: boolean,
-    downloaded: boolean,
-    type: ServiceType,
+  downloadPath: string
+  pathAvailable: boolean
+  downloaded: boolean
+  type: ServiceType
+  batchCount?: number
+  eventCount?: number
 }
 
-export interface DatabaseItem {
-    downloaded: string, 
-    downloadPath: string,
-    type: string,
-    pathAvailable: string
+export interface DownloadDatabaseItem {
+  downloaded: string
+  downloadPath: string
+  type: string
+  pathAvailable: string
+  batchCount?: string
+  eventCount?: string
 }
 
 export enum ServiceType {
-    Branch,
-    Tune
+  Branch,
+  Tune
 }
 
 export enum Destinations {
-    Segment,
-    Amplitude,
-    mParticle,
+  Segment,
+  Amplitude,
+  mParticle
 }
 
 export interface FailedEvent {
-    event: BranchEvent,
-    reason: String
+  service: ExportService
+  event: BranchEvent
+  reason: String
+}
+
+export interface BatchUpload {
+  filename: string
+  sequence: number
+  events?: BranchEvent[]
+  status: UploadResultStatus
+  errors?: FailedEvent[]
+}
+
+export interface BatchUploadDatabaseItem {
+  identifier: string
+  compressedEvents?: Buffer
+  compressedErrors?: Buffer
+  status: string
 }
 
 export interface UploadResult {
-    service: ExportService
-    errors: Array<FailedEvent>,
-    totalEvents: number,
-    file: string,
-    dateOfFile: string,
-    status: UploadResultStatus,
-    messages?: string
+  totalBatches: number
+  totalEvents: number
+  file: string
+  dateOfFile: string
+  status: UploadResultStatus
 }
 
 export enum ExportService {
-    None = "None",
-    Segment = "Segment",
-    Amplitude = "Amplitude",
-    Mixpanel = "Mixpanel"
+  None = 'None',
+  Segment = 'Segment',
+  Amplitude = 'Amplitude',
+  Mixpanel = 'Mixpanel'
 }
 
 export enum EventTopic {
-    Click = "eo_click",
-    View = "eo_branch_cta_view",
-	Commerce = "eo_commerce_event",
-    Content = "eo_content_event",
-    Install = "eo_install",
-    Open = "eo_open",
-    PageView = "eo_pageview",
-    Reinstall = "eo_reinstall",
-    SMSSent = "eo_sms_sent",
-    UserLifecycleEvent = "eo_user_lifecycle_event",
-    WebSessionStart = "eo_web_session_start",
-    WebToAppAutoRedirect = "eo_web_to_app_auto_redirect"
+  Click = 'eo_click',
+  View = 'eo_branch_cta_view',
+  Commerce = 'eo_commerce_event',
+  Content = 'eo_content_event',
+  Install = 'eo_install',
+  Open = 'eo_open',
+  PageView = 'eo_pageview',
+  Reinstall = 'eo_reinstall',
+  SMSSent = 'eo_sms_sent',
+  UserLifecycleEvent = 'eo_user_lifecycle_event',
+  WebSessionStart = 'eo_web_session_start',
+  WebToAppAutoRedirect = 'eo_web_to_app_auto_redirect'
 }
 
 export interface Response {
-    statusCode: number,
-    body: string,
-    isBase64Encoded: boolean
+  statusCode: number
+  body: string
+  isBase64Encoded: boolean
 }
 
 export enum UploadResultStatus {
-    Successful,
-    ContainsErrors,
-    Failed
+  NotUploaded = 0,
+  Successful = 1,
+  ContainsErrors = 2,
+  Failed = 3
 }
-
+export function reducedStatus(statuses: UploadResultStatus[]): UploadResultStatus {
+  return statuses.reduce((previousStatus: UploadResultStatus, status, _currentIndex, _array) => {
+    if (previousStatus === UploadResultStatus.NotUploaded) {
+        return UploadResultStatus.NotUploaded
+    }
+    if (previousStatus === UploadResultStatus.Failed && status !== UploadResultStatus.NotUploaded) {
+        return UploadResultStatus.Failed
+    }
+    if (previousStatus === UploadResultStatus.ContainsErrors && 
+        status !== UploadResultStatus.Failed && 
+        status !== UploadResultStatus.NotUploaded) {
+        return UploadResultStatus.ContainsErrors
+    }
+    return status
+  }, UploadResultStatus.Successful)
+}
 export interface JobReport {
-    service: String,
-    date: String,
-    events_count: number,
-    failed_events_count: number,
-    messages?: String[],
-    errors?: String[]
+  date: String
+  totalEvents: number
+  filename: string
+  totalBatches: number
 }

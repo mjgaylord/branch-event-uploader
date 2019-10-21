@@ -1,5 +1,6 @@
 import { APIGatewayProxyHandler, Context, Callback } from 'aws-lambda'
 import 'source-map-support/register'
+// @ts-ignore
 import dotenv from 'dotenv'
 import { Response } from '../model/Models'
 import { Database } from '../database/Database'
@@ -15,7 +16,7 @@ export const run: APIGatewayProxyHandler = async (event: any = {}, _context: Con
     if (!location) {
       throw new Error('`location` parameter missing from query string')
     }
-    const files = await database.getStatus(location)
+    const files = await database.listFilesByDownloadPath(location)
     const result: Response = {
       statusCode: 200,
       body: JSON.stringify(files),

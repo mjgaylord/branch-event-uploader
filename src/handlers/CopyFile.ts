@@ -1,12 +1,11 @@
 import { APIGatewayProxyHandler, Context, Callback, APIGatewayEvent } from 'aws-lambda'
 import 'source-map-support/register'
 import * as pathUtil from 'path'
-import { s3 } from '../utils/Config'
 import { Database } from '../database/Database'
 import * as zlib from 'zlib'
 import * as https from 'https'
 import { Response } from '../model/Models'
-
+import { s3 } from '../utils/Config'
 
 const database = new Database()
 
@@ -52,9 +51,10 @@ export const run: APIGatewayProxyHandler = async (event: APIGatewayEvent, contex
 function streamUncompressed(path: string, bucket: string, key: string): Promise<string> {
   return new Promise<any>(async (resolve, reject) => {
     https.get(path, async (response) => {
-      const unzip = zlib.createGunzip()
-      response.pipe(unzip)
-      await uploadReadableStream(unzip, bucket, key, path)
+      console.debug(`Setting up unzip pipeline`)
+      console.debug(`Headers: ${JSON.stringify(response.headers)}`)
+      const stream = response.pipe(zlib.createGunzip())
+      await uploadReadableStream(stream, bucket, key, path)
       resolve()
     }).on('error', error => {
       reject(error)

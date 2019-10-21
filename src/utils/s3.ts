@@ -10,6 +10,14 @@ export async function getFile(bucket: string, filename: string): Promise<string>
   return object.Body.toString()
 }
 
+export function getStream(bucket: string, filename: string): NodeJS.ReadableStream {
+  console.debug(`Reading stream: ${bucket}/${filename}`)
+  return s3.getObject({
+    Bucket: bucket,
+    Key: filename
+  }).createReadStream()
+}
+
 export async function loadTemplates(bucket: string, path?: string): Promise<{}> {
   console.debug(`Reading bucket: ${bucket}`)
   const objects = await s3.listObjects({

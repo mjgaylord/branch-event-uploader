@@ -1,15 +1,14 @@
 //@ts-ignore
 import Analytics from 'analytics-node'
 import BranchEvent from '../model/BranchEvent'
-import { UploadResult, FailedEvent, UploadResultStatus, ExportService } from '../model/Models'
+import { FailedEvent, ExportService } from '../model/Models'
 import { getFile, loadTemplates } from '../utils/s3'
 import { SegmentTransformer } from '../transformers/SegmentTransformer'
 import { templatesBucket } from '../utils/Config'
-import { dateInFilename } from '../utils/StringUtils'
 import { getSecret, Secret } from '../utils/Secrets'
 import { shouldUpload } from './UploaderFunctions'
 
-export async function uploadToSegment(events: BranchEvent[], filename: string): Promise<UploadResult | undefined> {
+export async function uploadToSegment(events: BranchEvent[], filename: string): Promise<FailedEvent[]> {
   try {
     const excludedConfig = process.env.SEGMENT_EXCLUDED_TOPICS
     if (!shouldUpload(filename, excludedConfig)) {
@@ -17,19 +16,19 @@ export async function uploadToSegment(events: BranchEvent[], filename: string): 
       console.info(message)
       return
     }
-    return upload(events, filename)
+    return upload(events)
   } catch (error) {
-    return {
-      service: ExportService.Segment,
-      errors: [error],
-      totalEvents: events.length,
-      file: filename,
-      dateOfFile: dateInFilename(filename),
-      status: UploadResultStatus.Failed
-    }
+    console.error(`Uploading to Segment failed due to: ${error}`)
+    return events.map(event => {
+      return {
+        event, 
+        service: ExportService.Segment, 
+        reason: JSON.stringify(error)
+      }
+    })
   }
 
-  async function upload(events: BranchEvent[], filename: string): Promise<UploadResult> {
+  async function upload(events: BranchEvent[]): Promise<FailedEvent[]> {
     const template = await getFile(templatesBucket, 'segment/SEGMENT.mst')
     const partials = await loadTemplates(templatesBucket, 'segment/partials')
     const transformer = new SegmentTransformer(template, partials)
@@ -46,39 +45,23 @@ export async function uploadToSegment(events: BranchEvent[], filename: string): 
         }
         analytics.track(segmentEvent)
       } catch (error) {
-        errors.push({ event, reason: JSON.stringify(error) })
+        errors.push({ event, service: ExportService.Segment, reason: JSON.stringify(error) })
       }
     }
-    let status = UploadResultStatus.Successful
-    if (errors.length === events.length) {
-      status = UploadResultStatus.Failed
-    } else if (errors.length > 0) {
-      status = UploadResultStatus.ContainsErrors
-    }
-    try {
-      await completed(analytics)
-    } catch (error) {
-      console.warn(`Error uploading events to Segment: ${JSON.stringify(error)}`)
-      status = UploadResultStatus.Failed
-    }
-    return {
-      totalEvents: events.length,
-      service: ExportService.Segment,
-      dateOfFile: dateInFilename(filename),
-      file: filename,
-      errors,
-      status
-    }
+    await completed(analytics)
+    return errors
   }
 }
 
 const completed = (analytics: Analytics): Promise<any> => {
   return new Promise((resolve, reject) => {
+    console.debug('Flushing Segment data...')
     analytics.flush((err, batch) => {
       if (!!err) {
         reject(err)
         return
       }
+      console.debug('Segment data flushed successfully.')
       resolve(batch)
     })
   })

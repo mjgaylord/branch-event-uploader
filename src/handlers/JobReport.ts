@@ -8,12 +8,12 @@ import * as Mustache from 'mustache'
 
 export const run: APIGatewayProxyHandler = async (event: APIGatewayEvent, _context: Context, _callback: Callback) => {
   //@ts-ignore
-  const uploadResults: Array<UploadResult> = event.results
-  console.info(`Send job report for result: ${JSON.stringify(uploadResults)}`)
-  const subject = subjectFromResult(uploadResults)
+  const uploadResult: UploadResult = event.result
+  console.info(`Send job report for result: ${JSON.stringify(uploadResult)}`)
+  const subject = subjectFromResult(uploadResult)
   const recipients = reportReceivers.split(',').map(v => v.trim())
   const sender = reportSender
-  const text = await bodyText(uploadResults)
+  const text = await bodyText(uploadResult)
   // const html = await bodyHtml(uploadResults)
 
   const params = { 
@@ -31,10 +31,6 @@ export const run: APIGatewayProxyHandler = async (event: APIGatewayEvent, _conte
           Data: text,
           Charset: "UTF-8" 
         }
-        // Html: {
-        //   Data: html,
-        //   Charset: "UTF-8"
-        // }
       }
     }
   }
@@ -57,15 +53,8 @@ export const run: APIGatewayProxyHandler = async (event: APIGatewayEvent, _conte
   }
 }
 
-const subjectFromResult = (results: Array<UploadResult>): string => {
-  const reducedStatus = results.reduce((previousStatus: UploadResultStatus, currentValue, _currentIndex, _array) => {
-    if (previousStatus === UploadResultStatus.Failed || 
-      previousStatus === UploadResultStatus.ContainsErrors) {
-      return currentValue.status
-    }
-    return currentValue.status
-  }, UploadResultStatus.Successful)
-  switch (reducedStatus) {
+const subjectFromResult = (result: UploadResult): string => {
+  switch (result.status) {
     case UploadResultStatus.ContainsErrors:
       return "Data Export Contains Errors"
     case UploadResultStatus.Failed:
@@ -75,31 +64,23 @@ const subjectFromResult = (results: Array<UploadResult>): string => {
   }
 }
 
-const bodyText = async (results: Array<UploadResult>): Promise<string> => {
-  return render(results, "email/JOBREPORT_plain.mst")
+const bodyText = async (result: UploadResult): Promise<string> => {
+  return render(result, "email/JOBREPORT_plain.mst")
 }
 
-// const bodyHtml = async (results: Array<UploadResult>): Promise<string> => {
-//   return render(results, "email/JOBREPORT_html.mst")
-// }
-
-const render = async (results: Array<UploadResult>, templatePath: string) : Promise<string> => {
+const render = async (result: UploadResult, templatePath: string) : Promise<string> => {
   const template = await getFile(templatesBucket, templatePath)
   initMustache(template)
-  const reports = reportFromResults(results)
+  const reports = reportFromResult(result)
   return Mustache.render(template, { reports })
 }
 
-const reportFromResults = (results: Array<UploadResult>): Array<JobReport> => {
-  return results.map(r => {
-    const errors = r.errors && []
+const reportFromResult = (result: UploadResult): JobReport => {
+  
     return {
-      service: r.service,
-      events_count: r.totalEvents,
-      failed_events_count: errors.length,
-      errors: errors.slice(0, errors.length > 50 ? 50 : errors.length).map(e => e.reason),
-      date: r.dateOfFile,
-      filename: r.file
+      totalBatches: result.totalBatches,
+      totalEvents: result.totalEvents,
+      date: result.dateOfFile,
+      filename: result.file,
     }
-  })
 }

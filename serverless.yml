@@ -25,13 +25,14 @@ custom:
     
 provider:
   name: aws
-  runtime: nodejs8.10
+  runtime: nodejs10.x
   region: ${self:custom.config.region}
   environment:
     REGION: ${self:custom.config.region}
     STAGE: ${self:custom.config.stage}
     APP_NAME: ${self:custom.config.appName}
-    DYNAMODB_TABLE: ${self:custom.app-name}-${self:service}-${self:custom.config.stage}
+    DOWNLOADS_TABLE: ${self:custom.app-name}-${self:service}-${self:custom.config.stage}-files
+    BATCH_UPLOAD_TABLE: ${self:custom.app-name}-${self:service}-${self:custom.config.stage}-upload
     EMAIL_RECEIVERS: ${self:custom.config.emailReceivers}
     EMAIL_SENDER: ${self:custom.config.emailSender}
     SEGMENT_EXCLUDED_TOPICS: ${self:custom.config.segmentExcludedTopics}
@@ -52,8 +53,10 @@ provider:
         - secretsmanager:GetSecretValue
         - s3:*
       Resource: 
-        - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
-        - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}/index/*"
+        - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.DOWNLOADS_TABLE}"
+        - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.DOWNLOADS_TABLE}/index/*"
+        - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.BATCH_UPLOAD_TABLE}"
+        - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.BATCH_UPLOAD_TABLE}/index/*"
         - "arn:aws:lambda:${self:custom.config.region}:*:function:*"
         - "arn:aws:ses:${self:custom.config.region}:*"
         - "arn:aws:ses:${self:custom.config.region}:*:identity/*"
@@ -79,6 +82,7 @@ functions:
 
   copy:
     handler: src/handlers/CopyFile.run
+    timeout: 900
 
   status:
     handler: src/handlers/CheckStatus.run
@@ -90,7 +94,7 @@ functions:
 
   transform:
     handler: src/handlers/Transform.run
-    timeout: 120
+    timeout: 900
     environment:
       FUNCTION_PREFIX: ${self:service}-${opt:stage, self:provider.stage}
     events:
@@ -103,16 +107,19 @@ functions:
     handler: src/handlers/JobReport.run
     timeout: 120
 
-  # testTransform:
-  #   handler: handlers/TestTransform.run
-  #   events:
-  #     - http:
-  #         method: post
-  #         path: test
+  upload:
+    handler: src/handlers/Upload.run
+    timeout: 30
+    environment:
+      FUNCTION_PREFIX: ${self:service}-${opt:stage, self:provider.stage}
+    events:
+      - http:
+          method: post
+          path: upload
 
 resources:
   Resources:
-    ExportDB:
+    DownloadsTable:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: Retain
       Properties:
@@ -137,7 +144,33 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-        TableName: ${self:provider.environment.DYNAMODB_TABLE}
+        TableName: ${self:provider.environment.DOWNLOADS_TABLE}
+    BatchUploadTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: identifier
+            AttributeType: S
+          - AttributeName: status
+            AttributeType: S
+        KeySchema:
+          - AttributeName: identifier
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: UploadedIndex
+            KeySchema:
+              - AttributeName: status
+                KeyType: HASH
+            Projection:
+              ProjectionType: KEYS_ONLY
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.BATCH_UPLOAD_TABLE}
     S3BucketExportTransforms:
       Type: AWS::S3::Bucket
       Properties:

@@ -65,7 +65,5 @@ Cloudwatch events also need to be setup to schedule event triggers on `start` an
 
 # TODOs:
 - Automate both Cloudwatch events and bucket create events
-- Add support for marking uploads as complete in DynamoDB
 - Add manual retry capability
-- Add support for Mixpanel
 - Improve test coverage

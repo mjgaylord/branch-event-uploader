@@ -1,5 +1,9 @@
 "tilde_id" : "{{last_attributed_touch_data_tilde_id}}",
 "campaign_id" : "{{last_attributed_touch_data_tilde_campaign_id}}",
+"campaign_name": "{{last_attributed_touch_data_tilde_campaign}}",
+"channel": "{{last_attributed_touch_data_tilde_channel}}",
+"feature": "{{last_attributed_touch_data_tilde_feature}}",
+"tags": "{{joinedTagsFunction}}",
 "stage" : "{{last_attributed_touch_data_tilde_stage}}",
 "partner_name" : "{{last_attributed_touch_data_tilde_advertising_partner_name}}",
 "secondary_publisher" : "{{last_attributed_touch_data_tilde_secondary_publisher}}",
@@ -21,4 +25,4 @@
 "journey_id" : "{{last_attributed_touch_data_tilde_journey_id}}",
 "view_name" : "{{last_attributed_touch_data_tilde_view_name}}",
 "view_id" : "{{last_attributed_touch_data_tilde_view_id}}",
-"dollar_3p" : "{{last_attributed_touch_data_dollar_3p}}"
+"ad_partner" : "{{last_attributed_touch_data_dollar_3p}}"

@@ -4,37 +4,38 @@ import 'source-map-support/register'
 import * as moment from 'moment'
 // @ts-ignore
 import dotenv from 'dotenv'
-import { Response, File, ServiceType } from '../model/Models'
+import { Response, File, ServiceType, ExportRequestStatus, ExportRequest } from '../model/Models'
 import { Database } from '../database/Database'
 import { serviceType } from '../utils/Config'
 import { getSecret, Secret } from '../utils/Secrets'
 
 export const run: APIGatewayProxyHandler = async (_event: any = {}, _context: Context, _callback: Callback): Promise<any> => {
-  const database = new Database()
   dotenv.config()
-  // we subtract 2 days as the previous day may not yet be available resulting in an empty response
-  const yesterday = moment().subtract(2, 'days').format('YYYY-MM-DD')
-  axios.defaults.headers.common = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  }
-  console.info('Starting exports scheduler...')
-  const api = axios.create({
-    baseURL: "https://api2.branch.io/v3"
-  })
-  
   try {
-    const key = await getSecret(Secret.BranchKey)
-    const secret = await getSecret(Secret.BranchSecret)
-    const response = await api.post('/export/', {
-      branch_key: key,
-      branch_secret: secret,
-      export_date: yesterday
-    })
-    console.debug('Exports requested successfully. Saving to database...')
-    const files = translateResponse(response.data)
-    await database.saveFiles(files)
+    const database = new Database()
+    // filter out requests we cannot retrieve (older than 7 days)
+    const sevenDaysOld = moment().subtract(10, 'days')
 
+    // list all unsuccessful requests
+    let requests = (await database.listUnsuccessfulExportRequests()).filter(value => {
+      return moment(value.dateRequested).isAfter(sevenDaysOld)
+    })
+
+    // save new request to database and add to list
+    const currentRequestDate = moment().subtract(2, 'days')
+    if (!requests.find(value => {
+      return currentRequestDate.isSame(value.dateRequested, 'day')
+    })) {
+      const request = {dateRequested: currentRequestDate.toDate(), status: ExportRequestStatus.Empty}
+      database.saveExportRequest(request)
+      requests.push(request)
+    }
+    console.debug(`Outstanding export requests: ${JSON.stringify(requests)}`)
+    // loop through list and make requests, save results to database
+    const results = await Promise.all(requests.map(request => {
+      return makeExportRequest(database, request)
+    }))
+    const files = [].concat(...results)
     const result: Response = {
       statusCode: 200,
       body: JSON.stringify(files),
@@ -50,6 +51,40 @@ export const run: APIGatewayProxyHandler = async (_event: any = {}, _context: Co
       isBase64Encoded: false
     }
     return failed
+  }
+}
+
+async function makeExportRequest(database: Database, request: ExportRequest): Promise<File[]> {
+  axios.defaults.headers.common = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  }
+  console.info('Starting exports scheduler...')
+  const api = axios.create({
+    baseURL: "https://api2.branch.io/v3"
+  })
+  try {
+    const key = await getSecret(Secret.BranchKey)
+    const secret = await getSecret(Secret.BranchSecret)
+    const requestDate = moment(request.dateRequested).format('YYYY-MM-DD')
+    console.debug(`Performing request for: ${requestDate}`)
+    const response = await api.post('/export/', {
+      branch_key: key,
+      branch_secret: secret,
+      export_date: requestDate
+    })
+    console.debug('Exports requested successfully. Saving to database...')
+    const files = translateResponse(response.data)
+    await database.saveFiles(files)
+    if (files.length > 0) {
+      request.status = ExportRequestStatus.Success
+      await database.saveExportRequest(request)
+    }
+    return files
+  } catch (error) {
+    request.status = ExportRequestStatus.Failed
+    await database.saveExportRequest(request)
+    throw error
   }
 }
 

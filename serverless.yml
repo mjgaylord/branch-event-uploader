@@ -33,6 +33,7 @@ provider:
     APP_NAME: ${self:custom.config.appName}
     DOWNLOADS_TABLE: ${self:custom.app-name}-${self:service}-${self:custom.config.stage}-files
     BATCH_UPLOAD_TABLE: ${self:custom.app-name}-${self:service}-${self:custom.config.stage}-upload
+    EXPORT_REQUEST_TABLE: ${self:custom.app-name}-${self:service}-${self:custom.config.stage}-export-requests
     EMAIL_RECEIVERS: ${self:custom.config.emailReceivers}
     EMAIL_SENDER: ${self:custom.config.emailSender}
     SEGMENT_EXCLUDED_TOPICS: ${self:custom.config.segmentExcludedTopics}
@@ -57,6 +58,8 @@ provider:
         - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.DOWNLOADS_TABLE}/index/*"
         - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.BATCH_UPLOAD_TABLE}"
         - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.BATCH_UPLOAD_TABLE}/index/*"
+        - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.EXPORT_REQUEST_TABLE}"
+        - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.EXPORT_REQUEST_TABLE}/index/*"
         - "arn:aws:lambda:${self:custom.config.region}:*:function:*"
         - "arn:aws:ses:${self:custom.config.region}:*"
         - "arn:aws:ses:${self:custom.config.region}:*:identity/*"
@@ -171,6 +174,32 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:provider.environment.BATCH_UPLOAD_TABLE}
+    ExportRequestTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: dateRequested
+            AttributeType: S
+          - AttributeName: status
+            AttributeType: S
+        KeySchema:
+          - AttributeName: dateRequested
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: ExportStatusIndex
+            KeySchema:
+              - AttributeName: status
+                KeyType: HASH
+            Projection:
+              ProjectionType: KEYS_ONLY
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.EXPORT_REQUEST_TABLE}
     S3BucketExportTransforms:
       Type: AWS::S3::Bucket
       Properties:

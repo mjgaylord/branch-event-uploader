@@ -34,6 +34,7 @@ export class Database {
   }
 
   saveFiles(files: File[]): Promise<void[]> {
+    console.info(`Saving ${files.length} to database`)
     return Promise.all(
       files.map(file => {
         return this.saveFile(file)

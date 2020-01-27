@@ -55,11 +55,14 @@ module.exports.install = async function () {
 
 const initialiseConfig = async () => {
   const envPath = path.join(__dirname, '.env')
+  console.log(`envPath: ${envPath}`)
   try {
     const result = await this.readFile(envPath)
+    
     return JSON.parse(result.toString())
   } catch (error) {
-    console.log(`.env not found, loading config from prompts`)
+    console.log(`.env not found or invalid: ${error}`)
+    console.log('Loading config from prompts:')
   }
   prompt.start()
   const result = await new Promise((resolve, reject) => {

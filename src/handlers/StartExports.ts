@@ -9,9 +9,8 @@ import { Database } from '../database/Database'
 import { serviceType } from '../utils/Config'
 import { getSecret, Secret } from '../utils/Secrets'
 
-const database = new Database()
-
 export const run: APIGatewayProxyHandler = async (_event: any = {}, _context: Context, _callback: Callback): Promise<any> => {
+  const database = new Database()
   dotenv.config()
   // we subtract 2 days as the previous day may not yet be available resulting in an empty response
   const yesterday = moment().subtract(2, 'days').format('YYYY-MM-DD')
@@ -54,18 +53,18 @@ export const run: APIGatewayProxyHandler = async (_event: any = {}, _context: Co
   }
 }
 
-function translateResponse(response: JSON): File[] {
+export function translateResponse(response: ExportResponse): File[] {
   let result = Array<File>()
   const type = serviceType()
-  console.info('Translating response...')
   for(const key in response) {
-    result.push({
-      downloadPath: response[key][0], 
-      downloaded: false, 
-      pathAvailable: type === ServiceType.Branch ? true : false,
-      type
-    })
+    response[key].forEach(file => {
+      result.push({
+        downloadPath: file,
+        downloaded: false, 
+        pathAvailable: type === ServiceType.Branch ? true : false,
+        type
+      })  
+    });
   }
-  console.info('Response translated')
   return result
 }

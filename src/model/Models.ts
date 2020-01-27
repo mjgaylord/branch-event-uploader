@@ -29,10 +29,26 @@ export enum Destinations {
   mParticle
 }
 
+export enum ExportRequestStatus {
+  Empty,
+  Success,
+  Failed
+}
+
 export interface FailedEvent {
   service: ExportService
   event: BranchEvent
-  reason: String
+  reason: string
+}
+
+export interface ExportRequestDatabaseItem {
+  dateRequested: string,
+  status: string
+}
+
+export interface ExportRequest {
+  dateRequested: Date,
+  status: ExportRequestStatus
 }
 
 export interface BatchUpload {

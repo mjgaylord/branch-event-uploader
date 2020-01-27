@@ -27,6 +27,7 @@ export const reportReceivers = process.env.EMAIL_RECEIVERS
 export const reportSender = process.env.EMAIL_SENDER
 export const exportsTableName = process.env.DOWNLOADS_TABLE
 export const batchUploadTableName = process.env.BATCH_UPLOAD_TABLE
+export const exportRequestStatusTableName = process.env.EXPORT_REQUEST_TABLE
 
 export function configuredServices(): Array<ExportService> {
   const services = process.env.EXPORT_SERVICES.split(',')

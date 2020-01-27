@@ -6,21 +6,25 @@ import {
   BatchUploadDatabaseItem,
   BatchUpload,
   UploadResultStatus,
-  reducedStatus
+  reducedStatus,
+  ExportRequest,
+  ExportRequestDatabaseItem,
+  ExportRequestStatus
 } from '../model/Models'
 import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 import * as AWS from 'aws-sdk'
 // @ts-ignore
 import dotenv from 'dotenv'
-import { typeToString } from '../functions/Functions'
-import { exportsTableName } from '../utils/Config'
-import { batchUploadTableName } from '../utils/Config'
+import { typeToString, exportRequestStatusToString, exportRequestStatusFromValue } from '../functions/Functions'
+import { batchUploadTableName, exportsTableName, exportRequestStatusTableName } from '../utils/Config'
 import { compressString, decompressString } from '../utils/Compression'
+import * as moment from 'moment'
 
 export class Database {
   dynamoDb: DocumentClient
   downloadTable = exportsTableName
   batchUploadTable = batchUploadTableName
+  exportRequestStatusTable = exportRequestStatusTableName
 
   constructor() {
     AWS.config.update({ region: process.env.REGION })
@@ -162,6 +166,44 @@ export class Database {
       })
     )
   }
+
+  async saveExportRequest(request: ExportRequest): Promise<void> {
+    const { exportRequestStatusTable, dynamoDb } = this
+    const item = exportRequestToItem(request)
+    const result = await dynamoDb
+      .put({
+        TableName: exportRequestStatusTable,
+        Item: item
+      })
+      .promise()
+    console.info(`DB Save result: ${JSON.stringify(result)}`)
+  }
+
+  async listUnsuccessfulExportRequests(): Promise<ExportRequest[]> {
+    const { exportRequestStatusTable, dynamoDb } = this
+    var param = {
+      TableName: exportRequestStatusTable,
+      FilterExpression: "#request_status = :failed OR #request_status = :empty",
+      ExpressionAttributeValues: {
+        ":failed": exportRequestStatusToString(ExportRequestStatus.Failed),
+        ":empty": exportRequestStatusToString(ExportRequestStatus.Empty),
+      },
+      ExpressionAttributeNames: {
+        "#request_status": "status"
+      }
+    };
+    const data = await dynamoDb
+      .scan(param)
+      .promise()
+    if (!data.Items) {
+      return []
+    }
+    return Promise.all(
+      data.Items.map(item => {
+        return itemToExportRequest(item)
+      })
+    )
+  }
 }
 
 export function itemToFile(item: any): File {  
@@ -221,4 +263,20 @@ export function appendMetrics(file: File, batchCount: number, eventCount: number
   return {...file, batchCount, eventCount}
 }
 
+export function exportRequestToItem(request: ExportRequest): ExportRequestDatabaseItem {
+  const { dateRequested, status } = request
+  const dateString = moment(dateRequested).format('YYYY-MM-DD')
+  return {
+    dateRequested: dateString,
+    status: exportRequestStatusToString(status)
+  }
+}
+
+export function itemToExportRequest(item: any): ExportRequest {
+  const { dateRequested, status } = item
+  return {
+    dateRequested: moment(dateRequested, 'YYYY-MM-DD').toDate(),
+    status: exportRequestStatusFromValue(status)
+  }
+}
 

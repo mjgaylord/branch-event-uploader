@@ -22,6 +22,9 @@ Please open a PR should you wish to include a new export destination.
 
 # Setup
 
+Before starting ensure that you have access to the Branch Data Feeds product and that you have enabled the Daily Export API
+![Daily Exports](docs/dailyExports.png)
+
 Install Homebrew
 
 Run `brew install node`

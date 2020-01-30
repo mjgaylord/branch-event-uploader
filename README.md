@@ -1,7 +1,7 @@
 
 # Overview
 
-This software makes daily, scheduled requests to the Branch Export API and downloads raw log level data to S3. With additional configuration the tool is able to transform and upload the raw data to multiple destinations. Supported destinations are:
+This software makes daily, scheduled requests to the Branch Daily Export API and downloads raw log level data to S3. With additional configuration the tool is able to transform and upload the raw data to multiple destinations. Supported destinations are:
   - Segment
   - Mixpanel
   - Amplitude
@@ -22,7 +22,7 @@ Please open a PR should you wish to include a new export destination.
 
 # Setup
 
-Before starting ensure that you have access to the Branch Data Feeds product and that you have enabled the Daily Export API
+Before starting ensure that you have access to the [Branch Data Feeds](https://docs.branch.io/exports/data-feeds-overview/) product and that you have enabled the *Daily Export API*
 ![Daily Exports](docs/dailyExports.png)
 
 Install Homebrew

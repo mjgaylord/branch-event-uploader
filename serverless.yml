@@ -167,12 +167,7 @@ resources:
                 KeyType: HASH
             Projection:
               ProjectionType: KEYS_ONLY
-            ProvisionedThroughput:
-              ReadCapacityUnits: 1
-              WriteCapacityUnits: 1
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+        BillingMode: PAY_PER_REQUEST
         TableName: ${self:provider.environment.BATCH_UPLOAD_TABLE}
     ExportRequestTable:
       Type: 'AWS::DynamoDB::Table'

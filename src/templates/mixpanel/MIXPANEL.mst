@@ -1,6 +1,7 @@
 {
   "event": "Branch {{name}}",
   "properties": {
+    "$insert_id": "{{hexIdFunction}}",
     "ip":"{{user_data_ip}}",
     "time":{{timestampMillisFunction}},
     "distinct_id":"{{userIdFunction}}",

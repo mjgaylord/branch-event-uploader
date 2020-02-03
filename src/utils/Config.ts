@@ -49,6 +49,11 @@ export function configuredServices(): Array<ExportService> {
   return services
 }
 
+export function includeOrganic(): Boolean {
+  const value = process.env.INCLUDE_ORGANIC
+  return (value === 'true')
+}
+
 export const excludedTopics = (config: string): Array<EventTopic> => {
   if (!config) {
     return []

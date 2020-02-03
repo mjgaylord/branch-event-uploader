@@ -1,5 +1,5 @@
 import { testEvent } from './TestData'
-import { enableFunctions } from '../src/model/BranchEvent'
+import { enableFunctions, isOrganic } from '../src/model/BranchEvent'
 import { ExportService } from '../src/model/Models'
 import { hasData } from '../src/utils/StringUtils'
 import AmplitudeEvent from '../src/model/AmplitudeEvent'
@@ -91,5 +91,16 @@ describe('Transform functions', () => {
   it('Returns true if hasData is defined', () => {
     const values: AmplitudeEvent = {device_id: '123456789', user_id: '1234456788'}
     expect(hasData(values.device_id, values.user_id)).toEqual(true)
+  })
+
+  it('Returns false for organic event', () => {
+    const value = isOrganic(event)
+    expect(value).toBeFalsy()
+  })
+
+  it('Returns true for organic event', () => {
+    event.last_attributed_touch_type = ""
+    const value = isOrganic(event)
+    expect(value).toBeTruthy()
   })
 })

@@ -59,6 +59,7 @@ If you want to avoid the prompts you can create a `.env` file in the root of you
   "amplitudeExcludedTopics": // Events to exclude from the upload see below,
   "mixpanelToken": // Your Mixpanel token,
   "mixpanelExcludedTopics": // Event to exclude from the upload see below,
+  "includeOrganic": //"true" or "false" (as String values). Organic events will be ignored from uploading
 }
 ```
 

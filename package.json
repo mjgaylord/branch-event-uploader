@@ -24,7 +24,8 @@
     "papaparse": "^5.1.0",
     "scramjet": "^4.27.1",
     "serverless-dynamodb-client": "0.0.2",
-    "source-map-support": "^0.5.13"
+    "source-map-support": "^0.5.13",
+    "uniqid": "^5.2.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.31",

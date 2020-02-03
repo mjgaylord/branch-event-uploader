@@ -1,4 +1,5 @@
 import { ExportService } from './Models'
+import uniqid from 'uniqid'
 
 export default interface BranchEvent {
     exportService: ExportService
@@ -144,6 +145,8 @@ export default interface BranchEvent {
     deviceIdFunction?: Function,
     userIdFunction?: Function,
     joinedFeaturesFunction?: Function,
+    randomIdFunction?:Function,
+    hexIdFunction?:Function
 }
 
 const TimestampMillis = function (): number {
@@ -232,6 +235,19 @@ const UserId = function(): string | undefined {
     return this.user_data_developer_identity
 }
 
+const RandomId = function(): string {
+    return uniqid()
+}
+
+const HexId = function(): string {
+    return Number(this.id).toString(16)
+}
+
+export function isOrganic(event: BranchEvent): Boolean {
+    return !event.last_attributed_touch_type 
+        || event.last_attributed_touch_type.length === 0
+}
+
 export function enableFunctions(event: BranchEvent, service: ExportService) {
     event.exportService = service
     event.timestampMillisFunction = TimestampMillis
@@ -241,4 +257,6 @@ export function enableFunctions(event: BranchEvent, service: ExportService) {
     event.joinedFeaturesFunction = JoinedFeatures
     event.touchDataFunction = TouchData
     event.userIdFunction = UserId
+    event.randomIdFunction = RandomId
+    event.hexIdFunction = HexId
 }

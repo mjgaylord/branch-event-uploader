@@ -1,12 +1,13 @@
 import { Context, Callback, APIGatewayProxyHandler, APIGatewayEvent } from 'aws-lambda'
 import { Response, UploadResult, ExportService, UploadResultStatus, FailedEvent } from '../model/Models'
 import BranchEvent from '../model/BranchEvent'
-import { configuredServices, lambda } from '../utils/Config'
+import { configuredServices, lambda, includeOrganic } from '../utils/Config'
 import { uploadToSegment } from '../event-uploaders/SegmentUploader'
 import { uploadToAmplitude } from '../event-uploaders/AmplitudeUploader'
 import { uploadToMixpanel } from '../event-uploaders/MixpanelUploader'
 import { Database } from '../database/Database'
 import { dateInFilename } from '../utils/StringUtils'
+import { isOrganic } from '../model/BranchEvent'
 
 const database = new Database()
 
@@ -71,17 +72,25 @@ export async function upload(events: BranchEvent[], filename: string): Promise<F
     console.warn(`Events empty, nothing to upload.`)
     return []
   }
-  console.info(`Uploading ${events.length} events to: ${services.join(', ')}`)
+  // filter out organic events if necessary
+  const filteredEvents = events.filter(event => !includeOrganic() && !isOrganic(event))
+  console.info(`Excluding organic events: ${!includeOrganic()}`)
+  console.info(`Total events to upload: ${filteredEvents.length}`)
+  if (filteredEvents.length === 0) {
+    console.info(`Total events to upload empty, skipping...`)
+    return []
+  }
+  console.info(`Uploading ${filteredEvents.length} events to: ${services.join(', ')}`)
   const errors = await Promise.all(
     services.map(async service => {
       console.debug(`Uploading to ${service}...`)
       switch (service) {
         case ExportService.Segment:
-          return await uploadToSegment(events, filename)
+          return await uploadToSegment(filteredEvents, filename)
         case ExportService.Amplitude:
-          return await uploadToAmplitude(events, filename)
+          return await uploadToAmplitude(filteredEvents, filename)
         case ExportService.Mixpanel:
-          return await uploadToMixpanel(events, filename)
+          return await uploadToMixpanel(filteredEvents, filename)
       }
     })
   )

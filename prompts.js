@@ -53,15 +53,8 @@ module.exports.prompts = function () {
         message: 'Invalid. Branch secret can be found at: https://branch.dashboard.branch.io/account-settings',
         required: true
       },
-      emailReceivers: {
-        description: 'Provide a list of emails to receive upload reports',
-        message: 'Email is required',
-        required: true
-      },
-      emailSender: {
-        description: 'Provide an email address to send the report from',
-        message: 'Email is required',
-        required: true
+      includeOrganic: {
+        description: `Include organic events in your uploads. Type 'true' or 'false'`
       },
       segmentKey: {
         description: 'Provide your Segment.io write key: (Enter nothing to disable Segment upload)',

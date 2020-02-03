@@ -38,8 +38,10 @@ provider:
     EMAIL_SENDER: ${self:custom.config.emailSender}
     SEGMENT_EXCLUDED_TOPICS: ${self:custom.config.segmentExcludedTopics}
     AMPLITUDE_EXCLUDED_TOPICS: ${self:custom.config.amplitudeExcludedTopics}
+    MIXPANEL_EXCLUDED_TOPICS: ${self:custom.config.mixpanelExcludedTopics}
     EXPORT_SERVICES: ${self:custom.config.services}
     TEMPLATES_BUCKET: ${self:custom.config.templatesBucket}
+    INCLUDE_ORGANIC: ${self:custom.config.includeOrganic}
   iamRoleStatements:
     - Effect: Allow
       Action:

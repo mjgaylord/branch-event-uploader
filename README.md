@@ -91,6 +91,7 @@ Next create an IAM User with programmatic access and the following policy permis
 - AmazonAPIGatewayAdministrator
 - AWSCodeDeployRoleForLambda
 - AWSDeepRacerCloudFormationAccessPolicy
+- IAMFullAccess
 
 Save the AWS key and secret for later use
 

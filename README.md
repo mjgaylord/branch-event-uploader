@@ -128,7 +128,7 @@ Cloudwatch events also need to be setup to schedule event triggers on `start` an
 ![ExportEvent](docs/exportEvent.png)
 5. Name the event `Export` and Save
 6. Create a second event with the following configuration
-![ExportEvent](docs/exportEvent.png)
+![DownloadEvent](docs/downloadEvent.png)
 7. Name your event `Download` and Save
 
 All setup at this point should be complete.

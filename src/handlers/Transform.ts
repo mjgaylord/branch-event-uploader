@@ -7,8 +7,6 @@ import BranchEvent from '../model/BranchEvent'
 import { parse } from 'papaparse'
 import { Database } from '../database/Database'
 
-const database = new Database()
-
 export const run = async (event: S3CreateEvent, _context: Context, _callback: Callback): Promise<any> => {
   console.info(`New file arrived: ${JSON.stringify(event.Records[0])}`)
   const bucket = event.Records[0].s3.bucket.name
@@ -53,11 +51,7 @@ export async function transformAndUpload(
       } else {
         input = header + '\n' + chunks.join('\n')
       }
-      const events: BranchEvent[] = parse(input, {
-        delimiter: ',',
-        header: true,
-        skipEmptyLines: true
-      }).data
+      const events = parseEvent(input)
       counter = counter + events.length
       await uploadEvents(events, filename, sequence)
       sequence++
@@ -70,6 +64,7 @@ export async function transformAndUpload(
       throw e
     })
   console.debug(`Total lines processed: ${counter} - Total sequences: ${sequence}`)
+  const database = new Database()
   await database.updateFileMetrics(filename, sequence, counter)
   return { batchCount: sequence, eventCount: counter}
 }
@@ -89,4 +84,13 @@ export async function uploadEvents(events: BranchEvent[], filename: string, sequ
     console.error(`Error executing lambda due to: ${error}`)
     return { success: false, error }
   }
+}
+
+export function parseEvent(input: string): BranchEvent[] {
+  const events: BranchEvent[] = parse(input, {
+    delimiter: ',',
+    header: true,
+    skipEmptyLines: true
+  }).data
+  return events
 }

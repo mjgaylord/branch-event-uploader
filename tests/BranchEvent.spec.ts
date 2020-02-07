@@ -1,8 +1,9 @@
-import { testEvent } from './TestData'
+import { testEvent, csvEvent, csvHeader } from './TestData'
 import { enableFunctions, isOrganic } from '../src/model/BranchEvent'
 import { ExportService } from '../src/model/Models'
 import { hasData } from '../src/utils/StringUtils'
 import AmplitudeEvent from '../src/model/AmplitudeEvent'
+import { parseEvent } from '../src/handlers/Transform'
 
 describe('Transform functions', () => {
   const event = testEvent
@@ -102,5 +103,12 @@ describe('Transform functions', () => {
     event.last_attributed_touch_type = ""
     const value = isOrganic(event)
     expect(value).toBeTruthy()
+  })
+
+  it(`Transforms a CSV event to a Branch Event successfully`, () => {
+    const csv = `${csvHeader}\n${csvEvent}`
+    const events = parseEvent(csv)
+    expect(events).toBeTruthy()
+    expect(events.length).toEqual(1)
   })
 })

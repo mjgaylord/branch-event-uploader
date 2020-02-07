@@ -22,3 +22,4 @@
 "view_name" : "{{last_attributed_touch_data_tilde_view_name}}",
 "view_id" : "{{last_attributed_touch_data_tilde_view_id}}",
 "dollar_3p" : "{{last_attributed_touch_data_dollar_3p}}"
+{{flattenedTouchDataFunction}}

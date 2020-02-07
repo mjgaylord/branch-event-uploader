@@ -136,6 +136,7 @@ export default interface BranchEvent {
     user_data_screen_height?: number,
     user_data_build: string,
     user_data_internet_connection_type: string,
+    user_data_cpu_type: string,
     hash_version: string,
 
     // Functions - each of these need to be defined and enabled below
@@ -143,6 +144,7 @@ export default interface BranchEvent {
     joinedTagsFunction?: Function,
     lowerCasedFunction?: Function,
     touchDataFunction?: Function,
+    flattenedTouchDataFunction?: Function,
     deviceIdFunction?: Function,
     userIdFunction?: Function,
     joinedFeaturesFunction?: Function,
@@ -182,27 +184,40 @@ const LowerCased = function (): Function {
 }
 
 const TouchData = function (): string {
-    const exclusions = this.exportService === ExportService.Mixpanel ? 
+    return AllTouchData(this)
+}
+
+const FlattenedTouchData = function(): string {
+    const touchData = AllTouchData(this).replace(/^\{|}$/g, '')
+    if (touchData.length >= 0) {
+        return "," + touchData
+    }
+    return ""
+}
+
+function AllTouchData(event: BranchEvent): string {
+    const exclusions = event.exportService === ExportService.Mixpanel ? 
     ["last_attributed_touch_data_custom_fields", 
     "last_attributed_touch_data_plus_via_features", 
     "last_attributed_touch_data_tilde_tags"] : []
 
     var lastAttributedTouchData = {}
-    for (const key of Object.keys(this)) {
-        const value = this[key]
+    for (const key of Object.keys(event)) {
+        const value = event[key]
         if (key !== 'last_attributed_touch_data_custom_fields' &&
             key.startsWith('last_attributed_touch_data') &&
             exclusions.indexOf(key) < 0 && value.length > 0) {
             lastAttributedTouchData[key] = value
         }
     }
+    
     try {
-        if (!!this.last_attributed_touch_data_custom_fields && this.last_attributed_touch_data_custom_fields.length > 0) {
-            const deserializedCustomFields = JSON.parse(this.last_attributed_touch_data_custom_fields)
+        if (!!event.last_attributed_touch_data_custom_fields && event.last_attributed_touch_data_custom_fields.length > 0) {
+            const deserializedCustomFields = JSON.parse(event.last_attributed_touch_data_custom_fields)
             lastAttributedTouchData = {...deserializedCustomFields, ...lastAttributedTouchData}
         }
     } catch (error) {
-        console.warn(`Errors deserializing custom fields: ${this.last_attributed_touch_data_custom_fields}\nerror: ${error}`)
+        console.warn(`Errors deserializing custom fields: ${event.last_attributed_touch_data_custom_fields}\nerror: ${error}`)
     }
     return JSON.stringify(lastAttributedTouchData)
 }
@@ -257,6 +272,7 @@ export function enableFunctions(event: BranchEvent, service: ExportService) {
     event.deviceIdFunction = AnyDeviceId
     event.joinedFeaturesFunction = JoinedFeatures
     event.touchDataFunction = TouchData
+    event.flattenedTouchDataFunction = FlattenedTouchData
     event.userIdFunction = UserId
     event.randomIdFunction = RandomId
     event.hexIdFunction = HexId

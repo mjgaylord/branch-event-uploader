@@ -104,9 +104,9 @@ functions:
       FUNCTION_PREFIX: ${self:service}-${opt:stage, self:provider.stage}
     events:
       - s3:
-        bucket: ${self:custom.s3Buckets.BUCKET_NAME}
-        event: s3:ObjectCreated:*
-        existing: true
+          bucket: ${self:custom.s3Buckets.BUCKET_NAME}
+          event: s3:ObjectCreated:*
+          existing: true
   
   report:
     handler: src/handlers/JobReport.run

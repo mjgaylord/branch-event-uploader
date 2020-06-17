@@ -1,14 +1,5 @@
-import { ServiceType, ExportService, EventTopic } from "../model/Models"
+import { ExportService, EventTopic } from "../model/Models"
 import * as AWS from 'aws-sdk'
-
-export function serviceType(): ServiceType {
-  const env = process.env.SERVICE_TYPE || 'Branch'
-  if (env === 'Tune') {
-    return ServiceType.Tune
-
-  }
-  return ServiceType.Branch
-}
 
 export const s3 = new AWS.S3({
   region: process.env.REGION
@@ -23,11 +14,8 @@ export const secretsManager = new AWS.SecretsManager({
 })
 
 export const templatesBucket = process.env.TEMPLATES_BUCKET
-export const reportReceivers = process.env.EMAIL_RECEIVERS
-export const reportSender = process.env.EMAIL_SENDER
-export const exportsTableName = process.env.DOWNLOADS_TABLE
+export const filesTable = process.env.FILES_TABLE
 export const batchUploadTableName = process.env.BATCH_UPLOAD_TABLE
-export const exportRequestStatusTableName = process.env.EXPORT_REQUEST_TABLE
 
 export function configuredServices(): Array<ExportService> {
   const services = process.env.EXPORT_SERVICES.split(',')

@@ -12,6 +12,10 @@ export const run = async (event: S3CreateEvent, _context: Context, _callback: Ca
   const bucket = event.Records[0].s3.bucket.name
   const filename = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, ' '))
   try {
+    const file = {
+      downloadPath: filename
+    }
+    await new Database().saveFile(file)
     const stream = getStream(bucket, filename)
     console.debug(`Uploading results for: ${bucket}/${filename}`)
     const uploadResults = await transformAndUpload(stream, filename)

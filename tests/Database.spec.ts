@@ -1,13 +1,10 @@
-import { File, ServiceType, BatchUpload, UploadResultStatus } from '../src/model/Models'
+import { File, BatchUpload, UploadResultStatus } from '../src/model/Models'
 import { fileToItem, itemToFile, appendMetrics, batchUploadToItem, itemToBatchUpload } from '../src/database/Database'
 import { testEvent } from './TestData'
 
 describe('Transform functions', () => {
   const file: File = {
-    downloaded: false,
     downloadPath: 'https://branch-demo-data-export-scheduler-dev-exports-bucket.s3.amazonaws.com/545541699229733113-2019-09-10-eo_custom_event-v2-28caae5790f83991ede4aac18dd55ed3fc50061d1ca3f76d3016d75fe9a3e2ea-63dzUe.csv',
-    type: ServiceType.Branch,
-    pathAvailable: true
   }
 
   const batchUpload: BatchUpload = {

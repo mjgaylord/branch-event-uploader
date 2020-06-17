@@ -21,8 +21,6 @@ module.exports.install = async function () {
   const secretKeys = [
     "awsAccessKeyId", 
     "awsSecretKey", 
-    "branchKey", 
-    "branchSecret", 
     "amplitudeKey", 
     "segmentKey", 
     "mixpanelToken", 

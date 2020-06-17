@@ -1,30 +1,22 @@
 import { DynamoDB } from 'aws-sdk'
 import {
-  File,
-  ServiceType,
-  DownloadDatabaseItem,
   BatchUploadDatabaseItem,
   BatchUpload,
   UploadResultStatus,
+  DownloadDatabaseItem,
   reducedStatus,
-  ExportRequest,
-  ExportRequestDatabaseItem,
-  ExportRequestStatus
+  File
 } from '../model/Models'
 import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 import * as AWS from 'aws-sdk'
 // @ts-ignore
 import dotenv from 'dotenv'
-import { typeToString, exportRequestStatusToString, exportRequestStatusFromValue } from '../functions/Functions'
-import { batchUploadTableName, exportsTableName, exportRequestStatusTableName } from '../utils/Config'
+import { batchUploadTableName, filesTable } from '../utils/Config'
 import { compressString, decompressString } from '../utils/Compression'
-import * as moment from 'moment'
 
 export class Database {
   dynamoDb: DocumentClient
-  downloadTable = exportsTableName
   batchUploadTable = batchUploadTableName
-  exportRequestStatusTable = exportRequestStatusTableName
 
   constructor() {
     AWS.config.update({ region: process.env.REGION })
@@ -47,10 +39,10 @@ export class Database {
   }
 
   async saveFile(file: File): Promise<void> {
-    const { downloadTable, dynamoDb } = this
+    const { dynamoDb } = this
     const result = await dynamoDb
       .put({
-        TableName: downloadTable,
+        TableName: filesTable,
         Item: fileToItem(file)
       })
       .promise()
@@ -82,10 +74,10 @@ export class Database {
   }
 
   async listDownloads(): Promise<File[]> {
-    const { downloadTable, dynamoDb } = this
+    const { dynamoDb } = this
     const data = await dynamoDb
       .scan({
-        TableName: downloadTable,
+        TableName: filesTable,
         FilterExpression: 'downloaded = :l',
         ExpressionAttributeValues: {
           ':l': '0'
@@ -100,12 +92,6 @@ export class Database {
         return itemToFile(item)
       }
     )
-  }
-
-  async downloadCompleted(path: string): Promise<void[]> {
-    const files = await this.listFilesByDownloadPath(path)
-    files.forEach(file => (file.downloaded = true))
-    return this.saveFiles(files)
   }
 
   async uploadStatus(filename: string): Promise<{file: File, status: UploadResultStatus}> {
@@ -128,10 +114,10 @@ export class Database {
   }
 
   private async listFilesByFilterExpression(expression: string, param: string): Promise<File[]> {
-    const { downloadTable, dynamoDb } = this
+    const { dynamoDb } = this
     const data = await dynamoDb.scan(
         {
-          TableName: downloadTable,
+          TableName: filesTable,
           FilterExpression: expression,
           ExpressionAttributeValues: {
             ':l': param
@@ -166,52 +152,11 @@ export class Database {
       })
     )
   }
-
-  async saveExportRequest(request: ExportRequest): Promise<void> {
-    const { exportRequestStatusTable, dynamoDb } = this
-    const item = exportRequestToItem(request)
-    const result = await dynamoDb
-      .put({
-        TableName: exportRequestStatusTable,
-        Item: item
-      })
-      .promise()
-    console.info(`DB Save result: ${JSON.stringify(result)}`)
-  }
-
-  async listUnsuccessfulExportRequests(): Promise<ExportRequest[]> {
-    const { exportRequestStatusTable, dynamoDb } = this
-    var param = {
-      TableName: exportRequestStatusTable,
-      FilterExpression: "#request_status = :failed OR #request_status = :empty",
-      ExpressionAttributeValues: {
-        ":failed": exportRequestStatusToString(ExportRequestStatus.Failed),
-        ":empty": exportRequestStatusToString(ExportRequestStatus.Empty),
-      },
-      ExpressionAttributeNames: {
-        "#request_status": "status"
-      }
-    };
-    const data = await dynamoDb
-      .scan(param)
-      .promise()
-    if (!data.Items) {
-      return []
-    }
-    return Promise.all(
-      data.Items.map(item => {
-        return itemToExportRequest(item)
-      })
-    )
-  }
 }
 
 export function itemToFile(item: any): File {  
   return {
-    downloaded: item.downloaded === '1' ? true : false,
     downloadPath: item.downloadPath as string,
-    pathAvailable: true, //TODO: Fix for Tune
-    type: ServiceType.Branch, //TODO: Fix for Tune,
     batchCount: Number.isInteger(item.batchCount) ? parseInt(item.batchCount) : undefined,
     eventCount: Number.isInteger(item.eventCount) ? parseInt(item.eventCount) : undefined
   }
@@ -219,10 +164,7 @@ export function itemToFile(item: any): File {
 
 export function fileToItem(file: File): DownloadDatabaseItem {
   return {
-    downloaded: `${file.downloaded ? '1' : '0'}`,
     downloadPath: `${file.downloadPath}`,
-    pathAvailable: `${file.pathAvailable ? '1' : '0'}`,
-    type: typeToString(file.type),
     batchCount: `${file.batchCount}`,
     eventCount: `${file.eventCount}`
   }
@@ -262,21 +204,3 @@ export async function itemToBatchUpload(item: any): Promise<BatchUpload> {
 export function appendMetrics(file: File, batchCount: number, eventCount: number): File {
   return {...file, batchCount, eventCount}
 }
-
-export function exportRequestToItem(request: ExportRequest): ExportRequestDatabaseItem {
-  const { dateRequested, status } = request
-  const dateString = moment(dateRequested).format('YYYY-MM-DD')
-  return {
-    dateRequested: dateString,
-    status: exportRequestStatusToString(status)
-  }
-}
-
-export function itemToExportRequest(item: any): ExportRequest {
-  const { dateRequested, status } = item
-  return {
-    dateRequested: moment(dateRequested, 'YYYY-MM-DD').toDate(),
-    status: exportRequestStatusFromValue(status)
-  }
-}
-

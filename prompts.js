@@ -29,6 +29,12 @@ module.exports.prompts = function () {
         description: 'Enter region (default: us-east-1)',
         default: 'us-east-1'
       },
+      downloadsBucket: {
+        description: 'Provide your S3 bucket name where your Branch export files are located',
+        pattern: /^[a-zA-Z0-9\+\/\=]+$/,
+        message: 'Invalid bucket name',
+        required: true
+      },
       awsAccessKeyId: {
         description: 'Provide your AWS Access Key ID',
         pattern: /^[A-Z0-9]+$/,
@@ -39,18 +45,6 @@ module.exports.prompts = function () {
         description: 'Provide your AWS Secret Key',
         pattern: /^[a-zA-Z0-9\+\/\=]+$/,
         message: 'Invalid AWS Secret Key',
-        required: true
-      },
-      branchKey: {
-        description: 'Provide your Branch Key',
-        pattern: /[key_^a-zA-Z0-9\-]+$/,
-        message: 'Invalid. Branch key can be found at: https://branch.dashboard.branch.io/account-settings',
-        required: true
-      },
-      branchSecret: {
-        description: 'Provide your Branch Secret',
-        pattern: /[secret_^a-zA-Z0-9\_]+$/,
-        message: 'Invalid. Branch secret can be found at: https://branch.dashboard.branch.io/account-settings',
         required: true
       },
       includeOrganic: {

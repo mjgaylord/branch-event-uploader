@@ -2,25 +2,14 @@ import BranchEvent from './BranchEvent'
 
 export interface File {
   downloadPath: string
-  pathAvailable: boolean
-  downloaded: boolean
-  type: ServiceType
   batchCount?: number
   eventCount?: number
 }
 
 export interface DownloadDatabaseItem {
-  downloaded: string
   downloadPath: string
-  type: string
-  pathAvailable: string
   batchCount?: string
   eventCount?: string
-}
-
-export enum ServiceType {
-  Branch,
-  Tune
 }
 
 export enum Destinations {
@@ -29,26 +18,10 @@ export enum Destinations {
   mParticle
 }
 
-export enum ExportRequestStatus {
-  Empty,
-  Success,
-  Failed
-}
-
 export interface FailedEvent {
   service: ExportService
   event: BranchEvent
   reason: string
-}
-
-export interface ExportRequestDatabaseItem {
-  dateRequested: string,
-  status: string
-}
-
-export interface ExportRequest {
-  dateRequested: Date,
-  status: ExportRequestStatus
 }
 
 export interface BatchUpload {
@@ -123,10 +96,4 @@ export function reducedStatus(statuses: UploadResultStatus[]): UploadResultStatu
     }
     return status
   }, UploadResultStatus.Successful)
-}
-export interface JobReport {
-  date: String
-  totalEvents: number
-  filename: string
-  totalBatches: number
 }

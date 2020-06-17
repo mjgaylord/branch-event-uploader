@@ -3,8 +3,6 @@ import { secretsManager } from '../utils/Config'
 export enum Secret {
   SegmentWriteKey = "segmentKey",
   AmplitudeApiKey = "amplitudeKey",
-  BranchKey = "branchKey",
-  BranchSecret = "branchSecret",
   MixpanelToken = "mixpanelToken",
   MixpanelAPIKey = "mixpanelAPIKey"
 }

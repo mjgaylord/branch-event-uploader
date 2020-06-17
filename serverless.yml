@@ -1,5 +1,5 @@
 service:
-  name: data-export-scheduler
+  name: event-uploader
 
 # Add the serverless-webpack plugin
 plugins:
@@ -14,28 +14,25 @@ custom:
   serverless-offline:
       port: 4000
       babelOptions:
-        presets: ["es2015"]
+        presets: ["es2017"]
   dynamodb:
     stages:
       - ${self:custom.config.stage}
     start:
       migrate: true
   s3Buckets:
-    BUCKET_NAME: ${self:custom.app-name}-${self:service}-${self:custom.config.stage}-exports-bucket
+    BUCKET_NAME: ${self:custom.config.downloadsBucket}
     
 provider:
   name: aws
-  runtime: nodejs10.x
+  runtime: nodejs12.x
   region: ${self:custom.config.region}
   environment:
     REGION: ${self:custom.config.region}
     STAGE: ${self:custom.config.stage}
     APP_NAME: ${self:custom.config.appName}
-    DOWNLOADS_TABLE: ${self:custom.app-name}-${self:service}-${self:custom.config.stage}-files
+    FILES_TABLE: ${self:custom.app-name}-${self:service}-${self:custom.config.stage}-files
     BATCH_UPLOAD_TABLE: ${self:custom.app-name}-${self:service}-${self:custom.config.stage}-upload
-    EXPORT_REQUEST_TABLE: ${self:custom.app-name}-${self:service}-${self:custom.config.stage}-export-requests
-    EMAIL_RECEIVERS: ${self:custom.config.emailReceivers}
-    EMAIL_SENDER: ${self:custom.config.emailSender}
     SEGMENT_EXCLUDED_TOPICS: ${self:custom.config.segmentExcludedTopics}
     AMPLITUDE_EXCLUDED_TOPICS: ${self:custom.config.amplitudeExcludedTopics}
     MIXPANEL_EXCLUDED_TOPICS: ${self:custom.config.mixpanelExcludedTopics}
@@ -56,12 +53,10 @@ provider:
         - secretsmanager:GetSecretValue
         - s3:*
       Resource: 
-        - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.DOWNLOADS_TABLE}"
-        - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.DOWNLOADS_TABLE}/index/*"
+        - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.FILES_TABLE}"
+        - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.FILES_TABLE}/index/*"
         - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.BATCH_UPLOAD_TABLE}"
         - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.BATCH_UPLOAD_TABLE}/index/*"
-        - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.EXPORT_REQUEST_TABLE}"
-        - "arn:aws:dynamodb:${self:custom.config.region}:*:table/${self:provider.environment.EXPORT_REQUEST_TABLE}/index/*"
         - "arn:aws:lambda:${self:custom.config.region}:*:function:*"
         - "arn:aws:ses:${self:custom.config.region}:*"
         - "arn:aws:ses:${self:custom.config.region}:*:identity/*"
@@ -74,29 +69,6 @@ provider:
         - "arn:aws:logs:${self:custom.config.region}:*:log-group:*:*:*"
 
 functions:
-  start:
-    handler: src/handlers/StartExports.run
-    timeout: 120
-          
-  download:
-    handler: src/handlers/CheckDownloads.run
-    timeout: 120
-    environment:
-      FUNCTION_PREFIX: ${self:service}-${opt:stage, self:provider.stage}
-      EXPORTS_BUCKET: ${self:custom.s3Buckets.BUCKET_NAME}
-
-  copy:
-    handler: src/handlers/CopyFile.run
-    timeout: 900
-
-  status:
-    handler: src/handlers/CheckStatus.run
-    timeout: 30
-    events:
-      - http:
-          method: get
-          path: status
-
   transform:
     handler: src/handlers/Transform.run
     timeout: 900
@@ -104,13 +76,10 @@ functions:
       FUNCTION_PREFIX: ${self:service}-${opt:stage, self:provider.stage}
     events:
       - s3:
+          existing: true
           bucket: ${self:custom.s3Buckets.BUCKET_NAME}
           event: s3:ObjectCreated:*
-          existing: true
-  
-  report:
-    handler: src/handlers/JobReport.run
-    timeout: 120
+          
 
   upload:
     handler: src/handlers/Upload.run
@@ -124,32 +93,20 @@ functions:
 
 resources:
   Resources:
-    DownloadsTable:
+    FilesTable:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: Retain
       Properties:
         AttributeDefinitions:
           - AttributeName: downloadPath
             AttributeType: S
-          - AttributeName: downloaded
-            AttributeType: S
         KeySchema:
           - AttributeName: downloadPath
             KeyType: HASH
-        GlobalSecondaryIndexes:
-          - IndexName: DownloadedIndex
-            KeySchema:
-              - AttributeName: downloaded
-                KeyType: HASH
-            Projection:
-              ProjectionType: KEYS_ONLY
-            ProvisionedThroughput:
-              ReadCapacityUnits: 1
-              WriteCapacityUnits: 1
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-        TableName: ${self:provider.environment.DOWNLOADS_TABLE}
+        TableName: ${self:provider.environment.FILES_TABLE}
     BatchUploadTable:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: Retain
@@ -171,42 +128,6 @@ resources:
               ProjectionType: KEYS_ONLY
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:provider.environment.BATCH_UPLOAD_TABLE}
-    ExportRequestTable:
-      Type: 'AWS::DynamoDB::Table'
-      DeletionPolicy: Retain
-      Properties:
-        AttributeDefinitions:
-          - AttributeName: dateRequested
-            AttributeType: S
-          - AttributeName: status
-            AttributeType: S
-        KeySchema:
-          - AttributeName: dateRequested
-            KeyType: HASH
-        GlobalSecondaryIndexes:
-          - IndexName: ExportStatusIndex
-            KeySchema:
-              - AttributeName: status
-                KeyType: HASH
-            Projection:
-              ProjectionType: KEYS_ONLY
-            ProvisionedThroughput:
-              ReadCapacityUnits: 1
-              WriteCapacityUnits: 1
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: ${self:provider.environment.EXPORT_REQUEST_TABLE}
-    S3BucketExportTransforms:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: '${self:custom.s3Buckets.BUCKET_NAME}'
-        LifecycleConfiguration: 
-          Rules:
-              - Id: DeleteEverythingInSevenDays
-                Prefix: ''
-                Status: Enabled
-                ExpirationInDays: 7
     TransformLambdaPermissionS3:
       Type: 'AWS::Lambda::Permission'
       Properties:

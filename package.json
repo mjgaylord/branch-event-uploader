@@ -6,7 +6,7 @@
   "scripts": {
     "test": "jest --config ./jest.config.js",
     "start": "./node_modules/.bin/sls offline start -r ap-southeast-1 --noTimeout",
-    "deploy": "sls deploy --verbose",
+    "deploy": "sls deploy --verbose ",
     "update": "npm run install && npm test && npm run deploy",
     "install": "node -e 'require(\"./install\").install()'",
     "debug": "export SLS_DEBUG=* && node --inspect-brk=9229 ./node_modules/.bin/serverless offline start -r ap-southeast-1 --noTimeout dev",
@@ -21,7 +21,7 @@
     "dotenv": "^8.2.0",
     "mixpanel": "^0.10.2",
     "mustache": "^3.1.0",
-    "papaparse": "^5.1.0",
+    "papaparse": "^5.2.0",
     "scramjet": "^4.27.1",
     "serverless-dynamodb-client": "0.0.2",
     "source-map-support": "^0.5.13",
@@ -48,6 +48,6 @@
     "typescript": "^3.6.3",
     "webpack": "^4.40.2"
   },
-  "author": "The serverless webpack authors (https://github.com/elastic-coders/serverless-webpack)",
+  "author": "Michael Gaylord https://",
   "license": "MIT"
 }

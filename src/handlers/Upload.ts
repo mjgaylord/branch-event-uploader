@@ -1,12 +1,11 @@
 import { Context, Callback, APIGatewayProxyHandler, APIGatewayEvent } from 'aws-lambda'
-import { Response, UploadResult, ExportService, UploadResultStatus, FailedEvent } from '../model/Models'
+import { Response, ExportService, UploadResultStatus, FailedEvent } from '../model/Models'
 import BranchEvent from '../model/BranchEvent'
-import { configuredServices, lambda, includeOrganic } from '../utils/Config'
+import { configuredServices, includeOrganic } from '../utils/Config'
 import { uploadToSegment } from '../event-uploaders/SegmentUploader'
 import { uploadToAmplitude } from '../event-uploaders/AmplitudeUploader'
 import { uploadToMixpanel } from '../event-uploaders/MixpanelUploader'
 import { Database } from '../database/Database'
-import { dateInFilename } from '../utils/StringUtils'
 import { isOrganic } from '../model/BranchEvent'
 
 const database = new Database()
@@ -36,17 +35,6 @@ export const run: APIGatewayProxyHandler = async (event: APIGatewayEvent, _conte
     })
     const jobStatus = await database.uploadStatus(filename)
     console.debug(`Job status: ${JSON.stringify(jobStatus)}`)
-    // send the job email if the job is now considered complete
-    if (jobStatus.status !== UploadResultStatus.NotUploaded 
-      && jobStatus.file.batchCount - 1 === sequence) {
-      await sendJobReport({
-        totalBatches: jobStatus.file.batchCount || 0,
-        totalEvents: jobStatus.file.eventCount || 0,
-        file: filename,
-        dateOfFile: dateInFilename(filename),
-        status: jobStatus.status
-      })
-    }
     const message = `Upload results: ${status} batch ${sequence} of ${jobStatus.file.batchCount}`
     console.info(message)
     const result: Response = {
@@ -95,23 +83,6 @@ export async function upload(events: BranchEvent[], filename: string): Promise<F
     })
   )
   return [].concat(...errors)
-}
-
-async function sendJobReport(result: UploadResult) {
-  const functionName = `${process.env.FUNCTION_PREFIX}-report`
-  try {
-    await lambda
-      .invoke({
-        LogType: 'Tail',
-        FunctionName: functionName,
-        Payload: JSON.stringify({ result }) // pass params
-      })
-      .promise()
-    return { success: true }
-  } catch (error) {
-    console.error(`Error executing lambda due to: ${error}`)
-    return { success: false, error }
-  }
 }
 
 function statusFromErrors(errors: FailedEvent[], eventCount: number): UploadResultStatus {

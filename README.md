@@ -49,7 +49,7 @@ If you want to avoid the prompts you can create a `.env` file in the root of you
   "segmentExcludedTopics": // Events to exclude from the upload see below,
   "amplitudeKey": // If using Amplitude, your Amplitude API key,
   "amplitudeExcludedTopics": // Events to exclude from the upload see below,
-  "mixpanelAPIKey": // Your Mixpanel API key
+  "mixpanelAPIKey": // Your Mixpanel API key,
   "mixpanelToken": // Your Mixpanel token,
   "mixpanelExcludedTopics": // Event to exclude from the upload see below,
   "includeOrganic": //"true" or "false" (as String values). Organic events will be ignored from uploading

@@ -61,7 +61,12 @@ export async function upload(events: BranchEvent[], filename: string): Promise<F
     return []
   }
   // filter out organic events if necessary
-  const filteredEvents = events.filter(event => !includeOrganic() && !isOrganic(event))
+  const filteredEvents = events.filter(event => {
+    if (includeOrganic()) {
+      return true
+    }
+    return !isOrganic(event)
+  })
   console.info(`Excluding organic events: ${!includeOrganic()}`)
   console.info(`Total events to upload: ${filteredEvents.length}`)
   if (filteredEvents.length === 0) {

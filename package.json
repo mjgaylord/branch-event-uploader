@@ -38,7 +38,7 @@
     "@types/papaparse": "^5.0.1",
     "jest": "^24.9.0",
     "prompt": "^1.0.0",
-    "serverless": "^1.52.2",
+    "serverless": "^3.25.1",
     "serverless-dynamodb-local": "^0.2.38",
     "serverless-offline": "^5.11.0",
     "serverless-webpack": "^5.3.1",
